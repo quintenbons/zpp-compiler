@@ -11,22 +11,21 @@
 namespace ast
 {
 
+
+template<typename Derived>
 class InterfaceEvaluator
 {
 public:
-#define METHOD_NOT_DEFINED(T) \
-uint64_t operator()(const T &) { THROW("[" << __PRETTY_FUNCTION__ << "] Not implemented"); }
-  METHOD_NOT_DEFINED(NumberLiteral);
-  METHOD_NOT_DEFINED(Type);
-  METHOD_NOT_DEFINED(Expression);
-  METHOD_NOT_DEFINED(ReturnStatement);
-  METHOD_NOT_DEFINED(Instruction);
-  METHOD_NOT_DEFINED(InstructionList);
-  // METHOD_NOT_DEFINED(CodeBlock); // same as InstructionList
-  METHOD_NOT_DEFINED(FunctionParameter);
-  METHOD_NOT_DEFINED(Function);
-  METHOD_NOT_DEFINED(TranslationUnit);
-#undef METHOD_NOT_DEFINED
+InterfaceEvaluator()
+{
+  static_assert(std::derived_from<Derived, InterfaceEvaluator>, "CRTP pattern not working: " TOSTRING(Derived) " should derive from " TOSTRING(InterfaceEvaluator<Derived>) );
+}
+
+#define CRTP(T) uint64_t operator()(const T &node) { return static_cast<Derived*>(this)->evaluate(node); }
+#define X(node, str) CRTP(node)
+PURE_NODE_LIST;
+#undef X
+#undef CRTP
 };
 
 template <typename EvaluatorT, typename AstNodeT>

@@ -8,6 +8,9 @@
 namespace utils
 {
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 template<typename T> struct is_variant : std::false_type {};
 
 template<typename ...Args>

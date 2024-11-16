@@ -9,10 +9,14 @@
 namespace ast
 {
 
-class DebugEvaluator: public InterfaceEvaluator
+class DebugEvaluator: public InterfaceEvaluator<DebugEvaluator>
 {
 public:
-  // uint64_t operator()(const T&) const { THROW("[" << __PRETTY_FUNCTION__ << "] Not implemented"); }
+#define METHOD_NOT_DEFINED(T) uint64_t evaluate(const T &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+#define X(node, str) METHOD_NOT_DEFINED(node)
+PURE_NODE_LIST
+#undef X
+#undef METHOD_NOT_DEFINED
 
 private:
   size_t _depth = 0;

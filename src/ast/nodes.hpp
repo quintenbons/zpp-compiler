@@ -58,4 +58,27 @@ struct Function
 
 using TranslationUnit = std::vector<Function>;
 
+#define PURE_NODE_LIST \
+  X(Type, "Node_Type") \
+  X(NumberLiteral, "Node_NumberLiteral") \
+  X(Expression, "Node_Expression") \
+  X(ReturnStatement, "Node_ReturnStatement") \
+  X(Instruction, "Node_Instruction") \
+  X(InstructionList, "Node_InstructionList") \
+  X(FunctionParameter, "Node_FunctionParameter") \
+  X(Function, "Node_Function") \
+  X(TranslationUnit, "Node_TranslationUnit")
+
+#define NODE_LIST \
+  PURE_NODE_LIST \
+  X(CodeBlock, "Node_CodeBlock")
+
+#define X(node, str) inline const char *nodeToStr(const node&) { return str; }
+PURE_NODE_LIST
+#undef X
+
+#define X(node, str) inline std::ostream& operator<<(std::ostream& os, const node &token) { return os << nodeToStr(token); }
+PURE_NODE_LIST
+#undef X
+
 } /* namespace ast */

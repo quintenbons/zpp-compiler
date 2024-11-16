@@ -61,7 +61,7 @@ enum TokenType {
 #undef X
 };
 
-const char* tokenToString(TokenType token) {
+const char *tokenToString(TokenType token) {
     switch (token) {
 #define X(token, str) case token: return str;
         TOKEN_LIST
