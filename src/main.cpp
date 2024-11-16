@@ -5,8 +5,9 @@
 
 #include "core/errors.hpp"
 #include "lexing_parsing/parser.ipp"
+#include "ast/DebugEvaluator.hpp"
 
-parser::ast::TranslationUnit parseTranslationUnit(const char *filename)
+ast::TranslationUnit parseTranslationUnit(const char *filename)
 {
   std::ifstream inputFile(filename);
   DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
@@ -23,5 +24,6 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  parser::ast::TranslationUnit translationUnit = parseTranslationUnit(args[1]);
+  ast::TranslationUnit translationUnit = parseTranslationUnit(args[1]);
+  ast::evaluate<ast::DebugEvaluator>([]() { return ast::DebugEvaluator(); }, translationUnit);
 }

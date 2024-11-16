@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "lexer.ipp"
-#include "ast.hpp"
+#include "ast/nodes.hpp"
 #include "core/errors.hpp"
 #include "core/utils.hpp"
 

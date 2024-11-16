@@ -6,19 +6,19 @@
 #include <string_view>
 #include <vector>
 
-namespace parser::ast
+namespace ast
 {
+
+struct Type
+{
+  std::string_view name;
+};
 
 struct NumberLiteral
 {
   using UnderlyingT = uint64_t;
 
   UnderlyingT number;
-};
-
-struct Type
-{
-  std::string_view name;
 };
 
 using Expression = std::variant<
@@ -37,7 +37,6 @@ using Instruction = std::variant<
 >;
 
 using InstructionList = std::vector<Instruction>;
-
 
 using CodeBlock = InstructionList;
 
@@ -59,4 +58,4 @@ struct Function
 
 using TranslationUnit = std::vector<Function>;
 
-} /* namespace parser::ast */
+} /* namespace ast */

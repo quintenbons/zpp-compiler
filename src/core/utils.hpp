@@ -1,8 +1,20 @@
+#pragma once
+
 #include <charconv>
+#include <type_traits>
+#include <variant>
 #include <string_view>
 
 namespace utils
 {
+
+template<typename T> struct is_variant : std::false_type {};
+
+template<typename ...Args>
+struct is_variant<std::variant<Args...>> : std::true_type {};
+
+template<typename T>
+inline constexpr bool is_variant_v=is_variant<T>::value;
 
 template<typename T>
 T readNumber(std::string_view str) {
