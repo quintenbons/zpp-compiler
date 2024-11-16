@@ -2,14 +2,16 @@
 
 #include <iostream>
 #include <sstream>
+#include <boost/stacktrace.hpp>
 
 #include "logger.hpp"
 
-#define THROW(msg)  \
-  do                \
-  {                 \
-    LOG_ERROR(msg); \
-    std::exit(1);   \
+#define THROW(msg)                              \
+  do                                            \
+  {                                             \
+    LOG_ERROR(msg);                             \
+    LOG_ERROR(boost::stacktrace::stacktrace()); \
+    std::exit(1);                               \
   } while (0)
 
 #define DEBUG_ASSERT(cond, ...)                                      \
@@ -29,23 +31,23 @@
     }                                                                \
   } while (0)
 
-#define USER_THROW(msg, ...)                                    \
-  do                                                            \
-  {                                                             \
-    std::stringstream ss;                                       \
-    __VA_OPT__(                                                 \
-        const FilePosition &pos = __VA_ARGS__;                  \
-        ss << "[Line: " << pos.lineCount                        \
-           << ", Offset: " << pos.lineOffset << "] ";)          \
-    ss << "Build failed: " << msg;                              \
-    __VA_OPT__(                                                 \
-        ss << '\n'                                              \
-           << pos.lineView;                                     \
-        ss << '\n';                                             \
+#define USER_THROW(msg, ...)                                       \
+  do                                                               \
+  {                                                                \
+    std::stringstream ss;                                          \
+    __VA_OPT__(                                                    \
+        const FilePosition &pos = __VA_ARGS__;                     \
+        ss << "[Line: " << pos.lineCount                           \
+           << ", Offset: " << pos.lineOffset << "] ";)             \
+    ss << "Build failed: " << msg;                                 \
+    __VA_OPT__(                                                    \
+        ss << '\n'                                                 \
+           << pos.lineView;                                        \
+        ss << '\n';                                                \
         for (size_t i = 0; i < pos.lineOffset - 1; ++i) ss << " "; \
-        ss << "^";)                                             \
-    LOG_ERROR(ss.str());                                        \
-    std::exit(1);                                               \
+        ss << "^";)                                                \
+    LOG_ERROR(ss.str());                                           \
+    std::exit(1);                                                  \
   } while (0)
 
 #define USER_ASSERT(cond, msg, ...) \
