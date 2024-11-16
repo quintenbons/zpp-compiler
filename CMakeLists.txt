@@ -8,10 +8,18 @@ set(CMAKE_CXX_COMPILER g++-13)
 
 set(SRC_DIR "src")
 set(PARSER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+set(MAIN_PROGRAM_SOURCES
+  ${SRC_DIR}/main.cpp
+  ${SRC_DIR}/lexing_parsing/lexer.ipp
+  ${SRC_DIR}/lexing_parsing/parser.ipp
+  ${SRC_DIR}/errors.hpp
+  ${SRC_DIR}/logger.hpp
+)
 
 project(MyCppCompiler VERSION 0.1 LANGUAGES CXX)
 
-add_executable(${CMAKE_PROJECT_NAME} ${SRC_DIR}/main.cpp ${SRC_DIR}/lexing_parsing/lexer.ipp ${SRC_DIR}/lexing_parsing/parser.ipp ${SRC_DIR}/errors.hpp)
+add_executable(${CMAKE_PROJECT_NAME} ${MAIN_PROGRAM_SOURCES})
+target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${SRC_DIR})
 
 find_library(BACKTRACE_LIBRARY NAMES backtrace PATHS /usr/local/lib NO_DEFAULT_PATH)

@@ -17,9 +17,12 @@ namespace keywords
   constexpr const char KW_RETURN[] = "return";
   constexpr const char KW_INT[] = "int";
   constexpr const char KW_VOID[] = "void";
+  constexpr const char KW_CHAR[] = "char";
 }
 
 #define TOKEN_LIST \
+    X(TT_NONE, "TT_NONE") \
+    \
     X(TT_NUMBER, "TT_NUMBER") \
     X(TT_IDENT, "TT_IDENT") \
     \
@@ -27,8 +30,10 @@ namespace keywords
     X(TT_K_ELSE, "TT_K_ELSE") \
     X(TT_K_WHILE, "TT_K_WHILE") \
     X(TT_K_RETURN, "TT_K_RETURN") \
+    \
     X(TT_K_INT, "TT_K_INT") \
     X(TT_K_VOID, "TT_K_VOID") \
+    X(TT_K_CHAR, "TT_K_CHAR") \
     \
     X(TT_PLUS, "TT_PLUS") \
     X(TT_MINUS, "TT_MINUS") \
@@ -70,6 +75,7 @@ inline std::ostream& operator<<(std::ostream& os, TokenType token) {
 struct FilePosition {
   size_t lineCount;
   size_t lineOffset;
+  std::string_view lineView;
 };
 
 struct Token
@@ -95,6 +101,7 @@ public:
       {
         _lineCount,
         _pos - _lineStartOffset - offsetCorrection,
+        currentLine(),
       }
     };
   }
@@ -135,10 +142,18 @@ public:
       if (current == ',') return createToken(TT_COMMA, std::string_view(_content.data()+_pos++, 1));
       if (current == ';') return createToken(TT_SEMI, std::string_view(_content.data()+_pos++, 1));
 
-      THROW("Unexpected character at pos[" << _pos << "]: [" << current << "]");
+      USER_THROW("Lexing failure: unknown character at pos[" << _pos << "]: [" << current << "]");
     }
 
     return createToken(TT_END, std::string_view());
+  }
+
+  std::string_view currentLine()
+  {
+    auto start = _content.begin() + _lineStartOffset;
+    auto end = std::find_if(start, _content.end(), [](char c) { return c == '\n'; });
+    std::string_view value(&*start, std::distance(start, end));
+    return value;
   }
 
 private:
@@ -162,10 +177,12 @@ private:
     if (value == keywords::KW_ELSE) return createToken(TT_K_ELSE, keywords::KW_ELSE);
     if (value == keywords::KW_WHILE) return createToken(TT_K_WHILE, keywords::KW_WHILE);
     if (value == keywords::KW_RETURN) return createToken(TT_K_RETURN, keywords::KW_RETURN);
+
     if (value == keywords::KW_INT) return createToken(TT_K_INT, keywords::KW_INT);
     if (value == keywords::KW_VOID) return createToken(TT_K_VOID, keywords::KW_VOID);
+    if (value == keywords::KW_CHAR) return createToken(TT_K_CHAR, keywords::KW_CHAR);
 
-    return {TT_IDENT, value};
+    return createToken(TT_IDENT, value);
   }
 
 private:

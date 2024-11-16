@@ -1,32 +1,58 @@
-#define THROW(msg)                           \
-    do {                                     \
-        std::cerr << msg << std::endl;       \
-        std::exit(1);                        \
-    } while (0)
+#pragma once
 
-#define DEBUG_ASSERT(cond, ...)                                                   \
-    do {                                                                          \
-        if (!(cond)) {                                                            \
-            std::cerr << "Assertion failed: (" << #cond << "), file " << __FILE__ \
-                      << ", line " << __LINE__;                                   \
-            if constexpr (sizeof(#__VA_ARGS__) > 1) {                             \
-                std::cerr << ": " << __VA_ARGS__;                                 \
-            }                                                                     \
-            std::cerr << std::endl;                                               \
-            std::exit(1);                                                         \
-        }                                                                         \
-    } while (0)
+#include <iostream>
+#include <sstream>
 
-#define USER_ASSERT(cond, msg, ...)                                                \
-    do {                                                                           \
-        if (!(cond)) {                                                             \
-            __VA_OPT__(                                                            \
-                const FilePosition& pos = __VA_ARGS__;                             \
-                std::cerr << "[Line: " << pos.lineCount                            \
-                          << ", Offset: " << pos.lineOffset << "] ";               \
-            )                                                                      \
-            std::cerr << "Build failed: " << msg;                                  \
-            std::cerr << std::endl;                                                \
-            std::exit(1);                                                          \
-        }                                                                          \
-    } while (0)
+#include "logger.hpp"
+
+#define THROW(msg)  \
+  do                \
+  {                 \
+    LOG_ERROR(msg); \
+    std::exit(1);   \
+  } while (0)
+
+#define DEBUG_ASSERT(cond, ...)                                      \
+  do                                                                 \
+  {                                                                  \
+    if (!(cond))                                                     \
+    {                                                                \
+      std::stringstream ss;                                          \
+      ss << "Assertion failed: (" << #cond << "), file " << __FILE__ \
+         << ", line " << __LINE__;                                   \
+      if constexpr (sizeof(#__VA_ARGS__) > 1)                        \
+      {                                                              \
+        ss << ": " << __VA_ARGS__;                                   \
+      }                                                              \
+      LOG_ERROR(ss.str());                                           \
+      std::exit(1);                                                  \
+    }                                                                \
+  } while (0)
+
+#define USER_THROW(msg, ...)                                    \
+  do                                                            \
+  {                                                             \
+    std::stringstream ss;                                       \
+    __VA_OPT__(                                                 \
+        const FilePosition &pos = __VA_ARGS__;                  \
+        ss << "[Line: " << pos.lineCount                        \
+           << ", Offset: " << pos.lineOffset << "] ";)          \
+    ss << "Build failed: " << msg;                              \
+    __VA_OPT__(                                                 \
+        ss << '\n'                                              \
+           << pos.lineView;                                     \
+        ss << '\n';                                             \
+        for (size_t i = 0; i < pos.lineOffset - 1; ++i) ss << " "; \
+        ss << "^";)                                             \
+    LOG_ERROR(ss.str());                                        \
+    std::exit(1);                                               \
+  } while (0)
+
+#define USER_ASSERT(cond, msg, ...) \
+  do                                \
+  {                                 \
+    if (!(cond))                    \
+    {                               \
+      USER_THROW(msg, __VA_ARGS__); \
+    }                               \
+  } while (0)
