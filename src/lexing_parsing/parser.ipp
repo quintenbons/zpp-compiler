@@ -4,7 +4,9 @@
 #include <functional>
 
 #include "lexer.ipp"
+#include "ast.hpp"
 #include "core/errors.hpp"
+#include "core/utils.hpp"
 
 namespace parser
 {
@@ -17,10 +19,12 @@ public:
   Parser(Lexer &&lexer): _lexer{std::move(lexer)} {}
   Parser(std::ifstream &&inputFile): _lexer(inputFile) {}
 
-  void parseProgram() {
+  ast::TranslationUnit parseProgram() {
+    std::vector<ast::Function> funcList{};
     nextToken();
-    parseFunction();
+    funcList.emplace_back(parseFunction());
     match(TT_END);
+    return funcList;
   }
 
 private:
@@ -51,11 +55,13 @@ private:
     TRAILING_REQUIRED,
   };
 
-  template<TokenType ttSeparator, TrailingSeparator trailingMode, TokenType ttBreaker = TT_NONE>
-  inline void parseSeparatedList(std::function<void()> parseElement) {
+  template<typename T, TokenType ttSeparator, TrailingSeparator trailingMode, TokenType ttBreaker = TT_NONE>
+  inline std::vector<T> parseSeparatedList(std::function<T()> parseElement) {
+    std::vector<T> elementList;
+
     while (ttBreaker == TT_NONE || _currentToken.type != ttBreaker)
     {
-      parseElement();
+      elementList.push_back(parseElement());
 
       if constexpr (ttSeparator != TT_NONE)
       {
@@ -69,6 +75,8 @@ private:
         USER_ASSERT(_currentToken.type != ttBreaker, "Found trailing " << ttSeparator << " in list, expected new element", _currentToken.position);
       }
     }
+
+    return std::move(elementList);
   }
 
   void matchIdent(std::string_view ident)
@@ -97,44 +105,60 @@ private:
     return pureType;
   }
 
-  void parseFunction()
+  ast::Function parseFunction()
   {
-    std::string returnType(parseType());
-    std::string functionName(match(TT_IDENT));
-    parseFunctionParams();
-    parseCodeBlock();
+    return {
+      .returnType = parseType(),
+      .name = match(TT_IDENT),
+      .parameters = parseFunctionParams(),
+      .body = parseCodeBlock(),
+    };
   }
 
-  void parseSingleParam()
+  ast::FunctionParameter parseSingleParam()
   {
-    parseType();
-    if (_currentToken.type == TT_IDENT) match(TT_IDENT);
+    auto type = parseType();
+    std::string_view name{};
+    if (_currentToken.type == TT_IDENT) name = match(TT_IDENT);
+
+    return {
+      .type = type,
+      .name = name,
+    };
   }
 
-  void parseFunctionParams()
+  ast::FunctionParameterList parseFunctionParams()
   {
     match(TT_LPAR);
-    parseSeparatedList<TT_COMMA, TRAILING_FORBIDDEN>([this]() { parseSingleParam(); });
+    auto functionParams = parseSeparatedList<ast::FunctionParameter, TT_COMMA, TRAILING_FORBIDDEN, TT_NONE>([this]() { return parseSingleParam(); });
     match(TT_RPAR);
+    return functionParams;
   }
 
-  void parseExpression()
+  ast::Expression parseNumberLiteral()
   {
-    match(TT_NUMBER);
+    auto numberView = match(TT_NUMBER);
+    return ast::NumberLiteral{utils::readNumber<ast::NumberLiteral::UnderlyingT>(numberView)};
   }
 
-  void parseSingleInstruction()
+  ast::Expression parseExpression()
   {
-    // TODO more possible instructions
+    return parseNumberLiteral();
+  }
+
+  ast::Instruction parseSingleInstruction()
+  {
     match(TT_K_RETURN);
-    parseExpression();
+    auto expression = parseExpression();
+    return ast::ReturnStatement{std::make_unique<ast::Expression>(std::move(expression))};
   }
 
-  void parseCodeBlock()
+  ast::CodeBlock parseCodeBlock()
   {
     match(TT_LCURL);
-    parseSeparatedList<TT_SEMI, TRAILING_REQUIRED, TT_RCURL>([this]() { parseSingleInstruction(); });
+    auto instructions = parseSeparatedList<ast::Instruction, TT_SEMI, TRAILING_REQUIRED, TT_RCURL>([this]() { return parseSingleInstruction(); });
     match(TT_RCURL);
+    return instructions;
   }
 
 private:

@@ -6,6 +6,14 @@
 #include "core/errors.hpp"
 #include "lexing_parsing/parser.ipp"
 
+parser::ast::TranslationUnit parseTranslationUnit(const char *filename)
+{
+  std::ifstream inputFile(filename);
+  DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
+  auto parser = parser::Parser(std::move(inputFile));
+  return parser.parseProgram();
+}
+
 int main(int argc, char** argv)
 {
   std::vector<const char*> args(argv, argv+argc);
@@ -15,10 +23,5 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  {
-    std::ifstream inputFile(args[1]);
-    DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
-    auto parser = parser::Parser(std::move(inputFile));
-    parser.parseProgram();
-  }
+  parser::ast::TranslationUnit translationUnit = parseTranslationUnit(args[1]);
 }

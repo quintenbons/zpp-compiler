@@ -12,8 +12,10 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/main.cpp
   ${SRC_DIR}/lexing_parsing/lexer.ipp
   ${SRC_DIR}/lexing_parsing/parser.ipp
+  ${SRC_DIR}/lexing_parsing/ast.hpp
   ${SRC_DIR}/core/errors.hpp
   ${SRC_DIR}/core/logger.hpp
+  ${SRC_DIR}/core/utils.hpp
 )
 
 project(MyCppCompiler VERSION 0.1 LANGUAGES CXX)
