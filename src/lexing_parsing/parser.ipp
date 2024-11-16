@@ -93,7 +93,7 @@ private:
     return match(TT_IDENT);
   }
 
-  std::string_view parseType()
+  ast::Type parseType()
   {
     std::string_view pureType = parsePureType();
     int pointerDepth = 0;
@@ -102,7 +102,7 @@ private:
       match(TT_STAR);
       pointerDepth++;
     }
-    return pureType;
+    return { pureType, pointerDepth };
   }
 
   ast::Function parseFunction()

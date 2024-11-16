@@ -12,6 +12,12 @@ namespace ast
 struct Type
 {
   std::string_view name;
+  int pointerDepth;
+
+  inline std::string fullName() const
+  {
+    return std::string(name) + std::string(pointerDepth, '*');
+  }
 };
 
 struct NumberLiteral

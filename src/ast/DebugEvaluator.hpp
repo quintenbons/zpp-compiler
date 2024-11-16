@@ -16,7 +16,7 @@ class DebugEvaluator: public InterfaceEvaluator<DebugEvaluator>
 protected:
 void evaluate(const Type &node)
 {
-  logNode(node, node.name);
+  logNode(node, node.fullName());
 }
 
 void evaluate(const NumberLiteral &node)
@@ -42,7 +42,7 @@ void evaluate(const InstructionList &node)
 
 void evaluate(const FunctionParameter &node)
 {
-  logNode(node, "Type: ", node.type.name, " ; Name: ", node.name);
+  logNode(node, "Type: ", node.type.fullName(), " ; Name: ", node.name);
 }
 
 void evaluate(const FunctionParameterList &node)
@@ -55,7 +55,7 @@ void evaluate(const FunctionParameterList &node)
 
 void evaluate(const Function &node)
 {
-  logNode(node, "ReturnType: ", node.returnType.name, " ; Name: ", node.name, " ; ParamCount: ", node.parameters.size());
+  logNode(node, "ReturnType: ", node.returnType.fullName(), " ; Name: ", node.name, " ; ParamCount: ", node.parameters.size());
   _depth++;
   (*this)(node.returnType);
   (*this)(node.parameters);
