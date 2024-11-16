@@ -67,10 +67,16 @@ inline std::ostream& operator<<(std::ostream& os, TokenType token) {
 }
 
 
+struct FilePosition {
+  size_t lineCount;
+  size_t lineOffset;
+};
+
 struct Token
 {
   TokenType type;
   std::string_view value;
+  FilePosition position;
 };
 
 class Lexer
@@ -81,11 +87,29 @@ public:
   {
   }
 
+  inline Token createToken(TokenType type, std::string_view value, size_t offsetCorrection = 0)
+  {
+    return Token {
+      type,
+      value,
+      {
+        _lineCount,
+        _pos - _lineStartOffset - offsetCorrection,
+      }
+    };
+  }
+
   Token nextToken() {
     std::string currentStr{};
     while (_pos < _content.size())
     {
       char current = _content[_pos];
+
+      if (current == '\n')
+      {
+        _lineCount++;
+        _lineStartOffset = _pos + 1;
+      }
 
       if (std::iswspace(current))
       {
@@ -96,25 +120,25 @@ public:
       if (std::isdigit(current)) return number();
       if (std::isalpha(current)) return identifier();
 
-      if (current == '+') return {TT_PLUS, std::string_view(_content.data()+_pos++, 1)};
-      if (current == '-') return {TT_MINUS, std::string_view(_content.data()+_pos++, 1)};
-      if (current == '*') return {TT_STAR, std::string_view(_content.data()+_pos++, 1)};
-      if (current == '/') return {TT_SLASH, std::string_view(_content.data()+_pos++, 1)};
+      if (current == '+') return createToken(TT_PLUS, std::string_view(_content.data()+_pos++, 1));
+      if (current == '-') return createToken(TT_MINUS, std::string_view(_content.data()+_pos++, 1));
+      if (current == '*') return createToken(TT_STAR, std::string_view(_content.data()+_pos++, 1));
+      if (current == '/') return createToken(TT_SLASH, std::string_view(_content.data()+_pos++, 1));
 
-      if (current == '[') return {TT_LBRACK, std::string_view(_content.data()+_pos++, 1)};
-      if (current == ']') return {TT_RBRACK, std::string_view(_content.data()+_pos++, 1)};
-      if (current == '(') return {TT_LPAR, std::string_view(_content.data()+_pos++, 1)};
-      if (current == ')') return {TT_RPAR, std::string_view(_content.data()+_pos++, 1)};
-      if (current == '{') return {TT_LCURL, std::string_view(_content.data()+_pos++, 1)};
-      if (current == '}') return {TT_RCURL, std::string_view(_content.data()+_pos++, 1)};
+      if (current == '[') return createToken(TT_LBRACK, std::string_view(_content.data()+_pos++, 1));
+      if (current == ']') return createToken(TT_RBRACK, std::string_view(_content.data()+_pos++, 1));
+      if (current == '(') return createToken(TT_LPAR, std::string_view(_content.data()+_pos++, 1));
+      if (current == ')') return createToken(TT_RPAR, std::string_view(_content.data()+_pos++, 1));
+      if (current == '{') return createToken(TT_LCURL, std::string_view(_content.data()+_pos++, 1));
+      if (current == '}') return createToken(TT_RCURL, std::string_view(_content.data()+_pos++, 1));
 
-      if (current == ',') return {TT_COMMA, std::string_view(_content.data()+_pos++, 1)};
-      if (current == ';') return {TT_SEMI, std::string_view(_content.data()+_pos++, 1)};
+      if (current == ',') return createToken(TT_COMMA, std::string_view(_content.data()+_pos++, 1));
+      if (current == ';') return createToken(TT_SEMI, std::string_view(_content.data()+_pos++, 1));
 
       THROW("Unexpected character at pos[" << _pos << "]: [" << current << "]");
     }
 
-    return {TT_END, std::string_view()};
+    return createToken(TT_END, std::string_view());
   }
 
 private:
@@ -124,7 +148,7 @@ private:
     auto end = std::find_if(start, _content.end(), [](char c) { return !std::isdigit(c); });
     std::string_view value(&*start, std::distance(start, end));
     _pos += value.size();
-    return {TT_NUMBER, value};
+    return createToken(TT_NUMBER, value);
   }
 
   Token identifier()
@@ -134,12 +158,12 @@ private:
     std::string_view value(&*start, std::distance(start, end));
     _pos += value.size();
 
-    if (value == keywords::KW_IF) return {TT_K_IF, keywords::KW_IF};
-    if (value == keywords::KW_ELSE) return {TT_K_ELSE, keywords::KW_ELSE};
-    if (value == keywords::KW_WHILE) return {TT_K_WHILE, keywords::KW_WHILE};
-    if (value == keywords::KW_RETURN) return {TT_K_RETURN, keywords::KW_RETURN};
-    if (value == keywords::KW_INT) return {TT_K_INT, keywords::KW_INT};
-    if (value == keywords::KW_VOID) return {TT_K_VOID, keywords::KW_VOID};
+    if (value == keywords::KW_IF) return createToken(TT_K_IF, keywords::KW_IF);
+    if (value == keywords::KW_ELSE) return createToken(TT_K_ELSE, keywords::KW_ELSE);
+    if (value == keywords::KW_WHILE) return createToken(TT_K_WHILE, keywords::KW_WHILE);
+    if (value == keywords::KW_RETURN) return createToken(TT_K_RETURN, keywords::KW_RETURN);
+    if (value == keywords::KW_INT) return createToken(TT_K_INT, keywords::KW_INT);
+    if (value == keywords::KW_VOID) return createToken(TT_K_VOID, keywords::KW_VOID);
 
     return {TT_IDENT, value};
   }
@@ -149,4 +173,6 @@ private:
   Token _currentToken;
 
   size_t _pos = 0;
+  size_t _lineCount = 0;
+  size_t _lineStartOffset = 0;
 };

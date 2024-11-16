@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 
   {
     std::ifstream inputFile(args[1]);
-    ASSERT(inputFile.is_open(), "Could not open file");
+    DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
     auto parser = Parser(std::move(inputFile));
     parser.parseProgram();
   }
