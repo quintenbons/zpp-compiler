@@ -7,6 +7,9 @@
 
 #include "core/errors.hpp"
 
+namespace lexer
+{
+
 constexpr size_t MAX_TOKEN_SIZE = 50;
 
 namespace keywords
@@ -193,3 +196,5 @@ private:
   size_t _lineCount = 0;
   size_t _lineStartOffset = 0;
 };
+
+} /* namespace lexer */

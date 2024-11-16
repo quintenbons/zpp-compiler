@@ -6,6 +6,11 @@
 #include "lexer.ipp"
 #include "core/errors.hpp"
 
+namespace parser
+{
+
+namespace { using namespace lexer; }
+
 class Parser
 {
 public:
@@ -136,3 +141,5 @@ private:
   Lexer _lexer;
   Token _currentToken;
 };
+
+} /* namespace parser */
