@@ -31,23 +31,22 @@
     }                                                                \
   } while (0)
 
-#define USER_THROW(msg, ...)                                       \
-  do                                                               \
-  {                                                                \
-    std::stringstream ss;                                          \
-    __VA_OPT__(                                                    \
-        const FilePosition &pos = __VA_ARGS__;                     \
-        ss << "[Line: " << pos.lineCount                           \
-           << ", Offset: " << pos.lineOffset << "] ";)             \
-    ss << "Build failed: " << msg;                                 \
-    __VA_OPT__(                                                    \
-        ss << '\n'                                                 \
-           << pos.lineView;                                        \
-        ss << '\n';                                                \
-        for (size_t i = 0; i < pos.lineOffset - 1; ++i) ss << " "; \
-        ss << "^";)                                                \
-    LOG_ERROR(ss.str());                                           \
-    std::exit(1);                                                  \
+#define USER_THROW(msg, ...)                                \
+  do                                                        \
+  {                                                         \
+    std::stringstream ss;                                   \
+    __VA_OPT__(                                             \
+        const FilePosition &pos = __VA_ARGS__;              \
+        ss << "[Line: " << pos.lineCount                    \
+           << ", Offset: " << pos.lineOffset << "] ";)      \
+    ss << "Build failed: " << msg;                          \
+    __VA_OPT__(                                             \
+        ss << '\n'                                          \
+           << pos.lineView;                                 \
+        ss << '\n'                                          \
+           << std::string(pos.lineOffset - 1, ' ') << "^";) \
+    LOG_ERROR(ss.str());                                    \
+    std::exit(1);                                           \
   } while (0)
 
 #define USER_ASSERT(cond, msg, ...) \

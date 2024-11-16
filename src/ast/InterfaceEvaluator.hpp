@@ -21,25 +21,15 @@ InterfaceEvaluator()
   static_assert(std::derived_from<Derived, InterfaceEvaluator>, "CRTP pattern not working: " TOSTRING(Derived) " should derive from " TOSTRING(InterfaceEvaluator<Derived>) );
 }
 
-#define CRTP(T) void operator()(const T &node) { return static_cast<Derived*>(this)->evaluate(node); }
+#define CRTP(T) inline void operator()(const T &node) { return static_cast<Derived*>(this)->evaluate(node); }
 #define X(node, str) CRTP(node)
 PURE_NODE_LIST;
 #undef X
 #undef CRTP
-};
 
-template <typename EvaluatorT, typename AstNodeT>
-void evaluate(std::function<EvaluatorT()> createEvaluator, AstNodeT &astNode)
-{
-  EvaluatorT evaluator = createEvaluator();
-  if constexpr (utils::is_variant_v<AstNodeT>)
-  {
-    std::visit(evaluator, astNode);
-  }
-  else
-  {
-    evaluator(astNode);
-  }
-}
+inline void operator()(const Expression &node) { return std::visit(*this, node); }
+inline void operator()(const Instruction &node) { return std::visit(*this, node); }
+
+};
 
 } /* namespace ast */

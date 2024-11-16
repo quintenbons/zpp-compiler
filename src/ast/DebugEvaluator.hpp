@@ -11,19 +11,80 @@ namespace ast
 
 class DebugEvaluator: public InterfaceEvaluator<DebugEvaluator>
 {
-public:
-void evaluate(const Type &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const NumberLiteral &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const Expression &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const ReturnStatement &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const Instruction &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const InstructionList &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const FunctionParameter &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const Function &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-void evaluate(const TranslationUnit &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+  friend class InterfaceEvaluator<DebugEvaluator>;
+
+protected:
+void evaluate(const Type &node)
+{
+  logNode(node, node.name);
+}
+
+void evaluate(const NumberLiteral &node)
+{
+  logNode(node, node.number);
+}
+
+void evaluate(const ReturnStatement &node)
+{
+  logNode(node);
+  _depth++;
+  (*this)(*node.expression);
+  _depth--;
+}
+
+void evaluate(const InstructionList &node)
+{
+  logNode(node, "InstructionCount: ", node.size());
+  _depth++;
+  for (const auto &instr: node) (*this)(instr);
+  _depth--;
+}
+
+void evaluate(const FunctionParameter &node)
+{
+  logNode(node, "Type: ", node.type.name, " ; Name: ", node.name);
+}
+
+void evaluate(const FunctionParameterList &node)
+{
+  logNode(node, "ParameterCount: ", node.size());
+  _depth++;
+  for (const auto &paramNode: node) (*this)(paramNode);
+  _depth--;
+}
+
+void evaluate(const Function &node)
+{
+  logNode(node, "ReturnType: ", node.returnType.name, " ; Name: ", node.name, " ; ParamCount: ", node.parameters.size());
+  _depth++;
+  (*this)(node.returnType);
+  (*this)(node.parameters);
+  (*this)(node.body);
+  _depth--;
+}
+
+void evaluate(const TranslationUnit &node)
+{
+  logNode(node, "Function count: ", node.size());
+  _depth++;
+  for (const auto &funcNode: node) (*this)(funcNode);
+  _depth--;
+}
 
 private:
+  template<typename NodeT, typename... Ts>
+  void logNode(const NodeT &node, Ts &&... args) {
+    std::stringstream ss;
+    ss << std::string(_depth * 2, ' ') << "[" << node << "] ";
+    if constexpr (sizeof...(args) > 0)
+    {
+      (ss << ... << args);
+    }
+    LOG(ss.str());
+  }
+
   size_t _depth = 0;
 };
+
 
 } /* namespace ast */

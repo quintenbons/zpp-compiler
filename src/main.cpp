@@ -8,12 +8,19 @@
 #include "ast/DebugEvaluator.hpp"
 #include "ast/MockEvaluator.hpp"
 
-ast::TranslationUnit parseTranslationUnit(const char *filename)
+struct translationUnitHandle
+{
+  parser::Parser parser;
+  ast::TranslationUnit translationUnit;
+};
+
+translationUnitHandle parseTranslationUnit(const char *filename)
 {
   std::ifstream inputFile(filename);
   DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
-  auto parser = parser::Parser(std::move(inputFile));
-  return parser.parseProgram();
+  parser::Parser parser(std::move(inputFile));
+  ast::TranslationUnit translationUnit = parser.parseProgram();
+  return { std::move(parser), std::move(translationUnit) };
 }
 
 int main(int argc, char** argv)
@@ -25,7 +32,7 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  ast::TranslationUnit translationUnit = parseTranslationUnit(args[1]);
+  auto tuHandle = parseTranslationUnit(args[1]);
   // ast::evaluate<ast::MockEvaluator>([]() { return ast::MockEvaluator(); }, translationUnit);
-  ast::evaluate<ast::DebugEvaluator>([]() { return ast::DebugEvaluator(); }, translationUnit);
+  ast::DebugEvaluator()(tuHandle.translationUnit);
 }
