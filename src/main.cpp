@@ -6,6 +6,7 @@
 #include "core/errors.hpp"
 #include "lexing_parsing/parser.ipp"
 #include "ast/DebugEvaluator.hpp"
+#include "ast/MockEvaluator.hpp"
 
 ast::TranslationUnit parseTranslationUnit(const char *filename)
 {
@@ -25,5 +26,6 @@ int main(int argc, char** argv)
   }
 
   ast::TranslationUnit translationUnit = parseTranslationUnit(args[1]);
+  // ast::evaluate<ast::MockEvaluator>([]() { return ast::MockEvaluator(); }, translationUnit);
   ast::evaluate<ast::DebugEvaluator>([]() { return ast::DebugEvaluator(); }, translationUnit);
 }

@@ -12,11 +12,15 @@ namespace ast
 class DebugEvaluator: public InterfaceEvaluator<DebugEvaluator>
 {
 public:
-#define METHOD_NOT_DEFINED(T) uint64_t evaluate(const T &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
-#define X(node, str) METHOD_NOT_DEFINED(node)
-PURE_NODE_LIST
-#undef X
-#undef METHOD_NOT_DEFINED
+void evaluate(const Type &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const NumberLiteral &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const Expression &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const ReturnStatement &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const Instruction &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const InstructionList &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const FunctionParameter &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const Function &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
+void evaluate(const TranslationUnit &node) { THROW("[" << node << "] Evalutaion not implemented in DebugEvaluator"); }
 
 private:
   size_t _depth = 0;

@@ -21,7 +21,7 @@ InterfaceEvaluator()
   static_assert(std::derived_from<Derived, InterfaceEvaluator>, "CRTP pattern not working: " TOSTRING(Derived) " should derive from " TOSTRING(InterfaceEvaluator<Derived>) );
 }
 
-#define CRTP(T) uint64_t operator()(const T &node) { return static_cast<Derived*>(this)->evaluate(node); }
+#define CRTP(T) void operator()(const T &node) { return static_cast<Derived*>(this)->evaluate(node); }
 #define X(node, str) CRTP(node)
 PURE_NODE_LIST;
 #undef X
