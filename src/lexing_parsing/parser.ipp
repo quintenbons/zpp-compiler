@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "lexer.ipp"
-#include "errors.hpp"
+#include "core/errors.hpp"
 
 class Parser
 {

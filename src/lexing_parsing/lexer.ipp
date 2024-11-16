@@ -5,7 +5,7 @@
 #include <fstream>
 #include <algorithm>
 
-#include "errors.hpp"
+#include "core/errors.hpp"
 
 constexpr size_t MAX_TOKEN_SIZE = 50;
 

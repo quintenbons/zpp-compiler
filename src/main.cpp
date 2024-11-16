@@ -3,7 +3,7 @@
 #include <vector>
 #include <cassert>
 
-#include "errors.hpp"
+#include "core/errors.hpp"
 #include "lexing_parsing/parser.ipp"
 
 int main(int argc, char** argv)
