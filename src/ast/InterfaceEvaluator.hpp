@@ -27,8 +27,8 @@ PURE_NODE_LIST;
 #undef X
 #undef CRTP
 
-inline void operator()(const Expression &node) { return std::visit(*this, node); }
-inline void operator()(const Instruction &node) { return std::visit(*this, node); }
+inline void operator()(Expression &node) { return std::visit(*this, node); }
+inline void operator()(Instruction &node) { return std::visit(*this, node); }
 
 };
 
