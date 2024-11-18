@@ -9,9 +9,9 @@
 namespace ast
 {
 
-class DebugEvaluator: public InterfaceEvaluator<DebugEvaluator>
+class DebugEvaluator: public InterfaceEvaluatorConst<DebugEvaluator>
 {
-  friend class InterfaceEvaluator<DebugEvaluator>;
+  friend class InterfaceEvaluatorConst<DebugEvaluator>;
 
 protected:
 void evaluate(const Type &node)
