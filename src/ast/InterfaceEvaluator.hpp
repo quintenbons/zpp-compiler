@@ -5,8 +5,8 @@
 #include <type_traits>
 
 #include "nodes.hpp"
-#include "core/utils.hpp"
-#include "core/errors.hpp"
+#include "dbg/utils.hpp"
+#include "dbg/errors.hpp"
 
 namespace ast
 {

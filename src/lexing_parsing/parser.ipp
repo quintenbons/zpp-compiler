@@ -5,8 +5,8 @@
 
 #include "lexer.ipp"
 #include "ast/nodes.hpp"
-#include "core/errors.hpp"
-#include "core/utils.hpp"
+#include "dbg/errors.hpp"
+#include "dbg/utils.hpp"
 
 namespace parser
 {
@@ -19,7 +19,7 @@ public:
   Parser(Lexer &&lexer): _lexer{std::move(lexer)} {}
   Parser(std::ifstream &&inputFile): _lexer(inputFile) {}
 
-  ast::TranslationUnit parseProgram() {
+  ast::TranslationUnit parseTranslationUnit() {
     std::vector<ast::Function> funcList{};
     nextToken();
     funcList.emplace_back(parseFunction());

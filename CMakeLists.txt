@@ -14,9 +14,11 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/lexing_parsing/parser.ipp
   ${SRC_DIR}/ast/nodes.hpp
   ${SRC_DIR}/ast/InterfaceEvaluator.hpp
-  ${SRC_DIR}/core/errors.hpp
-  ${SRC_DIR}/core/logger.hpp
-  ${SRC_DIR}/core/utils.hpp
+  ${SRC_DIR}/dbg/errors.hpp
+  ${SRC_DIR}/dbg/logger.hpp
+  ${SRC_DIR}/dbg/utils.hpp
+
+  ${SRC_DIR}/core/TranslationUnitHandle.hpp
 
   ${SRC_DIR}/ast/DebugEvaluator.hpp
   ${SRC_DIR}/ast/MockEvaluator.hpp

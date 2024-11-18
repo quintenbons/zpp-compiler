@@ -5,7 +5,7 @@
 #include <fstream>
 #include <algorithm>
 
-#include "core/errors.hpp"
+#include "dbg/errors.hpp"
 
 namespace lexer
 {

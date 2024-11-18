@@ -4,7 +4,7 @@
 
 #include "InterfaceEvaluator.hpp"
 #include "nodes.hpp"
-#include "core/errors.hpp"
+#include "dbg/errors.hpp"
 
 namespace ast
 {
