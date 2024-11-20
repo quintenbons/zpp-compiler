@@ -18,11 +18,11 @@ struct Type
 {
   std::string_view name;
   int pointerDepth;
-  std::unique_ptr<const scopes::TypeDescription> description{};
+  const scopes::TypeDescription* description{};
 
   void decorate(scopes::Scope &_currentScope)
   {
-    description = std::unique_ptr<const scopes::TypeDescription>(&_currentScope.findType(name));
+    description = &_currentScope.findType(name);
   }
 
   inline std::string fullName() const

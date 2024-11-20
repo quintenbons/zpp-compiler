@@ -5,7 +5,9 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <sstream>
 
+#include "dbg/logger.hpp"
 #include "types.hpp"
 
 namespace scopes
@@ -32,6 +34,17 @@ public:
     return _parent->findType(name);
   }
 
+  void logDebug()
+  {
+    std::stringstream ss;
+    ss << "[Scope] id=" << _id << " ; parent=" << (_parent ? _parent->_id : 0);
+    for (auto &[name, description]: _types)
+    {
+      ss << "\n  [Type] id=" << description.id << " ; name=" << description.name << " ; size=" << description.size;
+    }
+    LOG_DEBUG(ss.str());
+  }
+
 private:
   scopeId_t _id;
   Scope *_parent; // TODO think about relacing this with a scope id
@@ -55,6 +68,12 @@ public:
   }
 
   Scope &rootScope() { return _scopes[0]; }
+
+  void logDebug()
+  {
+    LOG_DEBUG("ScopeStack of " << _scopes.size() << " scopes");
+    for (auto &scope: _scopes) scope.logDebug();
+  }
 
 private:
   Scope &createChildScope(Scope *parent)

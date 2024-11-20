@@ -24,6 +24,7 @@ public:
 protected:
 void evaluate(Type &node)
 {
+  logNode(node, "Type: ", node.name);
   node.decorate(_currentScope);
 }
 
@@ -88,7 +89,7 @@ private:
     {
       (ss << ... << args);
     }
-    LOG(ss.str());
+    LOG_DEBUG(ss.str());
   }
 
   scopes::ScopeStack &_scopeStack;
