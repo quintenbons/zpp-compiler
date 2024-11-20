@@ -21,10 +21,21 @@ public:
 
   ast::TranslationUnit parseTranslationUnit() {
     std::vector<ast::Function> funcList{};
+    std::vector<ast::Class> classList{};
     nextToken();
-    funcList.emplace_back(parseFunction());
+    while (_currentToken.type != TT_END)
+    {
+      if (_currentToken.type == TT_K_CLASS)
+        classList.emplace_back(parseClass());
+      else
+        funcList.emplace_back(parseFunction());
+    }
     match(TT_END);
-    return funcList;
+
+    return {
+      .functions = std::move(funcList),
+      .classes = std::move(classList),
+    };
   }
 
 private:
@@ -113,6 +124,40 @@ private:
       .parameters = parseFunctionParams(),
       .body = parseCodeBlock(),
     };
+  }
+
+  ast::Class parseClass() {
+    nextToken();
+    ast::Class c;
+    c.name = match(TT_IDENT);
+
+    match(TT_LCURL);
+    while (_currentToken.type != TT_RCURL) {
+      ast::AccessSpecifier attribute_specifier { .level = ast::LevelSpecifier::Private };
+      ast::Type type = parseType();
+      std::string_view name = match(TT_IDENT);
+      if (_currentToken.type == TT_LPAR) {
+        ast::Function method = {
+          .returnType = type,
+          .name = name,
+          .parameters = parseFunctionParams(),
+          .body = parseCodeBlock(),
+        };
+        c.methods.emplace_back(std::make_pair(std::move(method), attribute_specifier));
+      }
+      else {
+        ast::Attribute attribute = {
+          .type = type,
+          .name = name,
+        };
+        c.attributes.emplace_back(std::make_pair(attribute, attribute_specifier));
+        match(TT_SEMI);
+      }
+    }
+    match(TT_RCURL);
+    match(TT_SEMI);
+
+    return c;
   }
 
   ast::FunctionParameter parseSingleParam()
