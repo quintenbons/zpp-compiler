@@ -11,7 +11,6 @@
 namespace ast
 {
 
-
 template<typename Derived>
 class InterfaceEvaluator
 {

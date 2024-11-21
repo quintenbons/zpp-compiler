@@ -6,6 +6,9 @@
 #include <string_view>
 #include <vector>
 
+#include "scopes/scopeStack.hpp"
+#include "scopes/types.hpp"
+
 namespace ast
 {
 
@@ -15,6 +18,12 @@ struct Type
 {
   std::string_view name;
   int pointerDepth;
+  const scopes::TypeDescription* description{};
+
+  void decorate(scopes::Scope &_currentScope)
+  {
+    description = &_currentScope.findType(name);
+  }
 
   inline std::string fullName() const
   {
