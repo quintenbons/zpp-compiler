@@ -18,6 +18,10 @@ namespace keywords
   constexpr const char KW_ELSE[] = "else";
   constexpr const char KW_WHILE[] = "while";
   constexpr const char KW_RETURN[] = "return";
+  constexpr const char KW_CLASS[] = "class";
+  constexpr const char KW_PUBLIC[] = "public";
+  constexpr const char KW_PROTECTED[] = "protected";
+  constexpr const char KW_PRIVATE[] = "private";
   constexpr const char KW_INT[] = "int";
   constexpr const char KW_VOID[] = "void";
   constexpr const char KW_CHAR[] = "char";
@@ -33,6 +37,10 @@ namespace keywords
     X(TT_K_ELSE, "TT_K_ELSE") \
     X(TT_K_WHILE, "TT_K_WHILE") \
     X(TT_K_RETURN, "TT_K_RETURN") \
+    X(TT_K_CLASS, "TT_K_CLASS") \
+    X(TT_K_PUBLIC, "TT_K_PUBLIC") \
+    X(TT_K_PROTECTED, "TT_K_PROTECTED") \
+    X(TT_K_PRIVATE, "TT_K_PRIVATE") \
     \
     X(TT_K_INT, "TT_K_INT") \
     X(TT_K_VOID, "TT_K_VOID") \
@@ -180,6 +188,10 @@ private:
     if (value == keywords::KW_ELSE) return createToken(TT_K_ELSE, keywords::KW_ELSE);
     if (value == keywords::KW_WHILE) return createToken(TT_K_WHILE, keywords::KW_WHILE);
     if (value == keywords::KW_RETURN) return createToken(TT_K_RETURN, keywords::KW_RETURN);
+    if (value == keywords::KW_CLASS) return createToken(TT_K_CLASS, keywords::KW_CLASS);
+    if (value == keywords::KW_PUBLIC) return createToken(TT_K_PUBLIC, keywords::KW_PUBLIC);
+    if (value == keywords::KW_PROTECTED) return createToken(TT_K_PROTECTED, keywords::KW_PROTECTED);
+    if (value == keywords::KW_PRIVATE) return createToken(TT_K_PRIVATE, keywords::KW_PRIVATE);
 
     if (value == keywords::KW_INT) return createToken(TT_K_INT, keywords::KW_INT);
     if (value == keywords::KW_VOID) return createToken(TT_K_VOID, keywords::KW_VOID);

@@ -9,6 +9,8 @@
 namespace ast
 {
 
+enum class LevelSpecifier { Public, Protected, Private };
+
 struct Type
 {
   std::string_view name;
@@ -46,7 +48,13 @@ using InstructionList = std::vector<Instruction>;
 
 using CodeBlock = InstructionList;
 
-struct FunctionParameter
+struct FunctionParameter 
+{
+  Type type;
+  std::string_view name;
+};
+
+struct Attribute 
 {
   Type type;
   std::string_view name;
@@ -62,7 +70,24 @@ struct Function
   CodeBlock body;
 };
 
-using TranslationUnit = std::vector<Function>;
+using Method = Function;
+
+struct AccessSpecifier
+{
+  LevelSpecifier level;
+};
+
+struct Class
+{
+  std::string_view name;
+  std::vector<std::pair<Attribute, AccessSpecifier>> attributes;
+  std::vector<std::pair<Method, AccessSpecifier>> methods;
+};
+
+struct TranslationUnit {
+  std::vector<Function> functions;
+  std::vector<Class> classes;
+};
 
 #define PURE_NODE_LIST \
   X(Type, "Node_Type") \
@@ -72,6 +97,9 @@ using TranslationUnit = std::vector<Function>;
   X(FunctionParameter, "Node_FunctionParameter") \
   X(FunctionParameterList, "Node_FunctionParameter") \
   X(Function, "Node_Function") \
+  X(LevelSpecifier, "Node_ClassLevelSpecifier") \
+  X(Attribute, "Node_ClassAttribute") \
+  X(Class, "Node_Class") \
   X(TranslationUnit, "Node_TranslationUnit")
 
 #define VARIANT_NODE_LIST \

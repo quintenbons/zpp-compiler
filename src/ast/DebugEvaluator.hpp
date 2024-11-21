@@ -45,6 +45,11 @@ void evaluate(const FunctionParameter &node)
   logNode(node, "Type: ", node.type.fullName(), " ; Name: ", node.name);
 }
 
+void evaluate(const Attribute &node)
+{
+  logNode(node, "Type: ", node.type.fullName(), " ; Name: ", node.name);
+}
+
 void evaluate(const FunctionParameterList &node)
 {
   logNode(node, "ParameterCount: ", node.size());
@@ -63,11 +68,51 @@ void evaluate(const Function &node)
   _depth--;
 }
 
+void evaluate(const Class &node)
+{
+  logNode(node, "Name: ", node.name, " ; Members: ", node.attributes.size() + node.methods.size());
+  for (auto &level: std::array{LevelSpecifier::Private, LevelSpecifier::Public, LevelSpecifier::Protected}) {
+    (*this)(level);
+    _depth++;
+    for (const auto &[attribute, accessSpecifier]: node.attributes) {
+      if (accessSpecifier.level == level)
+        (*this)(attribute);
+    }
+    for (const auto &[method, accessSpecifier]: node.methods) {
+      if (accessSpecifier.level == level)
+        (*this)(method);
+    }
+    _depth--;
+  }
+}
+
+void evaluate(const LevelSpecifier &node) 
+{
+  switch (node)
+  {
+  case LevelSpecifier::Private:
+    logNode(node, "LevelSpecifier: Private"); 
+    break;
+  case LevelSpecifier::Protected:
+    logNode(node, "LevelSpecifier: Protected"); 
+    break;
+  case LevelSpecifier::Public:
+    logNode(node, "LevelSpecifier: Public"); 
+    break;
+  default:
+    break;
+  }
+}
+
 void evaluate(const TranslationUnit &node)
 {
-  logNode(node, "Function count: ", node.size());
+  logNode(node, "Function count: ", node.functions.size());
   _depth++;
-  for (const auto &funcNode: node) (*this)(funcNode);
+  for (const auto &funcNode: node.functions) (*this)(funcNode);
+  _depth--;
+  logNode(node, "Class count: ", node.classes.size());
+  _depth++;
+  for (const auto &classNode: node.classes) (*this)(classNode);
   _depth--;
 }
 
