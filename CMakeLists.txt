@@ -7,6 +7,7 @@ set(CMAKE_CXX_COMPILER g++-13)
 # set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fno-omit-frame-pointer")
 
 set(SRC_DIR "src")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PARSER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/main.cpp
