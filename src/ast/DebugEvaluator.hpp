@@ -125,7 +125,7 @@ private:
     {
       (ss << ... << args);
     }
-    LOG(ss.str());
+    LOG_DEBUG(ss.str());
   }
 
   size_t _depth = 0;

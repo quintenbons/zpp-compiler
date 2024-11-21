@@ -22,6 +22,7 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/core/TranslationUnitHandle.hpp
 
   ${SRC_DIR}/ast/DebugEvaluator.hpp
+  ${SRC_DIR}/ast/DecoratorEvaluator.ipp
   ${SRC_DIR}/ast/MockEvaluator.hpp
 )
 

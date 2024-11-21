@@ -167,7 +167,7 @@ private:
     if (_currentToken.type == TT_IDENT) name = match(TT_IDENT);
 
     return {
-      .type = type,
+      .type = std::move(type),
       .name = name,
     };
   }
