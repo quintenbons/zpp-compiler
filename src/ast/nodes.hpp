@@ -1,7 +1,6 @@
 #pragma once
 
 #include <variant>
-#include <cstddef>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -57,13 +56,13 @@ using InstructionList = std::vector<Instruction>;
 
 using CodeBlock = InstructionList;
 
-struct FunctionParameter 
+struct FunctionParameter
 {
   Type type;
   std::string_view name;
 };
 
-struct Attribute 
+struct Attribute
 {
   Type type;
   std::string_view name;

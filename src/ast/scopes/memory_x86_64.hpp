@@ -1,4 +1,8 @@
+#pragma once
+
 #include <cstddef>
+#include <variant>
+#include <string>
 
 namespace scopes
 {
@@ -10,18 +14,13 @@ enum RegisterID
   ecx,
 };
 
-struct MemoryLocation
-{
-
-};
-
-struct GlobalStack
+struct GlobalStackOffset
 {
   size_t _size;
   size_t _byteOffset;
 };
 
-struct LocalStack
+struct LocalStackOffset
 {
   size_t _size;
   size_t _byteOffset;
@@ -30,6 +29,19 @@ struct LocalStack
 struct Register
 {
   RegisterID id;
+};
+
+
+using LocationDescription = std::variant<
+  Register,
+  LocalStackOffset,
+  GlobalStackOffset
+>;
+
+struct VariableDescription
+{
+  std::string name;
+  LocationDescription location;
 };
 
 }

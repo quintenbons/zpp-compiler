@@ -3,12 +3,12 @@
 #include <cstdint>
 #include <limits>
 #include <vector>
-#include <string>
 #include <map>
 #include <sstream>
 
 #include "dbg/logger.hpp"
 #include "types.hpp"
+#include "memory_x86_64.hpp"
 
 namespace scopes
 {
@@ -49,7 +49,7 @@ private:
   scopeId_t _id;
   Scope *_parent; // TODO think about relacing this with a scope id
   std::map<std::string_view, const TypeDescription &> _types;
-  // std::map<std::string_view, const LocationDescription &> _locations; // TODO lvalues?
+  std::map<std::string_view, const VariableDescription &> _variables; // TODO lvalues?
 };
 
 class ScopeStack

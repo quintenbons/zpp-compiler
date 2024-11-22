@@ -4,7 +4,6 @@
 
 #include "InterfaceEvaluator.hpp"
 #include "nodes.hpp"
-#include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
 
 namespace ast
