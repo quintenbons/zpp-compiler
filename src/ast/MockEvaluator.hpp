@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstddef>
-
 #include "InterfaceEvaluator.hpp"
 #include "nodes.hpp"
 #include "dbg/errors.hpp"

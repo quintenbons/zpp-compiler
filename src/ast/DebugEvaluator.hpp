@@ -4,7 +4,6 @@
 
 #include "InterfaceEvaluator.hpp"
 #include "nodes.hpp"
-#include "dbg/errors.hpp"
 
 namespace ast
 {
@@ -86,18 +85,18 @@ void evaluate(const Class &node)
   }
 }
 
-void evaluate(const LevelSpecifier &node) 
+void evaluate(const LevelSpecifier &node)
 {
   switch (node)
   {
   case LevelSpecifier::Private:
-    logNode(node, "LevelSpecifier: Private"); 
+    logNode(node, "LevelSpecifier: Private");
     break;
   case LevelSpecifier::Protected:
-    logNode(node, "LevelSpecifier: Protected"); 
+    logNode(node, "LevelSpecifier: Protected");
     break;
   case LevelSpecifier::Public:
-    logNode(node, "LevelSpecifier: Public"); 
+    logNode(node, "LevelSpecifier: Public");
     break;
   default:
     break;
@@ -125,7 +124,7 @@ private:
     {
       (ss << ... << args);
     }
-    LOG(ss.str());
+    LOG_DEBUG(ss.str());
   }
 
   size_t _depth = 0;

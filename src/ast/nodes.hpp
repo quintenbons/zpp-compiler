@@ -1,10 +1,12 @@
 #pragma once
 
 #include <variant>
-#include <cstddef>
 #include <memory>
 #include <string_view>
 #include <vector>
+
+#include "scopes/scopeStack.hpp"
+#include "scopes/types.hpp"
 
 namespace ast
 {
@@ -15,6 +17,12 @@ struct Type
 {
   std::string_view name;
   int pointerDepth;
+  const scopes::TypeDescription* description{};
+
+  void decorate(scopes::Scope &_currentScope)
+  {
+    description = &_currentScope.findType(name);
+  }
 
   inline std::string fullName() const
   {
@@ -48,13 +56,13 @@ using InstructionList = std::vector<Instruction>;
 
 using CodeBlock = InstructionList;
 
-struct FunctionParameter 
+struct FunctionParameter
 {
   Type type;
   std::string_view name;
 };
 
-struct Attribute 
+struct Attribute
 {
   Type type;
   std::string_view name;

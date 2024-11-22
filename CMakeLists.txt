@@ -15,6 +15,11 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/lexing_parsing/parser.ipp
   ${SRC_DIR}/ast/nodes.hpp
   ${SRC_DIR}/ast/InterfaceEvaluator.hpp
+
+  ${SRC_DIR}/ast/scopes/scopeStack.hpp
+  ${SRC_DIR}/ast/scopes/types.hpp
+  ${SRC_DIR}/ast/scopes/memory_x86_64.hpp
+
   ${SRC_DIR}/dbg/errors.hpp
   ${SRC_DIR}/dbg/logger.hpp
   ${SRC_DIR}/dbg/utils.hpp
@@ -22,6 +27,7 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/core/TranslationUnitHandle.hpp
 
   ${SRC_DIR}/ast/DebugEvaluator.hpp
+  ${SRC_DIR}/ast/DecoratorEvaluator.ipp
   ${SRC_DIR}/ast/MockEvaluator.hpp
 )
 
