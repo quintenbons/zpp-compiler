@@ -22,6 +22,9 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/ast/scopes/scopeStack.hpp
   ${SRC_DIR}/ast/scopes/types.hpp
   ${SRC_DIR}/ast/scopes/memory_x86_64.hpp
+  ${SRC_DIR}/ast/scopes/registers.hpp
+
+  ${SRC_DIR}/codegen/generate.hpp
 
   ${SRC_DIR}/dbg/errors.hpp
   ${SRC_DIR}/dbg/logger.hpp

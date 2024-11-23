@@ -1,11 +1,13 @@
 #pragma once
 
+#include <ostream>
 #include <sstream>
 #include <variant>
 #include <memory>
 #include <string_view>
 #include <vector>
 
+#include "ast/scopes/registers.hpp"
 #include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
 #include "scopes/types.hpp"
@@ -39,6 +41,11 @@ struct NumberLiteral
   using UnderlyingT = uint64_t;
 
   UnderlyingT number;
+
+  void loadValueInRegister(std::ostream &ss, scopes::Register targetRegister)
+  {
+    ss << "  mov " << scopes::regToStr(targetRegister) << ", " << number << ENDL;
+  }
 };
 
 using Expression = std::variant<
@@ -51,7 +58,7 @@ struct ReturnStatement
 
   void genCode(std::ostream &ss) const
   {
-    // charger dans le registre eax la val de expression
+    std::visit([&ss](auto &&expr) { expr.loadValueInRegister(ss, scopes::returnRegister); }, *expression );
     ss << "  ret" << ENDL;
   }
 };
@@ -145,7 +152,7 @@ struct TranslationUnit {
     asmCode << "_start:" << ENDL;
     asmCode << "  call main" << ENDL;
     asmCode << "  mov rax, 60                  ; Syscall number for exit (60)" << ENDL;
-    asmCode << "  xor rdi, rdi                 ; Exit code (0)" << ENDL;
+    asmCode << "  mov rdi, rbx                 ; Exit code (0) expects return of main to be put in rbx for now" << ENDL;
     asmCode << "  syscall                      ; Make the syscall" << ENDL;
 
     for (auto &func: functions)
