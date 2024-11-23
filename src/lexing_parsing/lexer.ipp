@@ -63,6 +63,7 @@ namespace keywords
     X(TT_DOUBLE_QUOTE, "TT_DOUBLE_QUOTE") \
     \
     X(TT_COMMA, "TT_COMMA") \
+    X(TT_COLON, "TT_COLON") \
     X(TT_SEMI, "TT_SEMI") \
     \
     X(TT_END, "TT_END")
@@ -121,6 +122,17 @@ public:
     };
   }
 
+  inline std::string_view getRawUntil(char breaker)
+  {
+    auto startPos = _pos;
+    while (_content[_pos] != breaker)
+    {
+      if (_content[_pos] == '\n') incrementLineCount();
+      _pos++;
+    }
+    return std::string_view(_content.data()+startPos, _pos-startPos);
+  }
+
   Token nextToken() {
     std::string currentStr{};
     while (_pos < _content.size())
@@ -145,6 +157,7 @@ public:
       if (current == '}') return createToken(TT_RCURL, std::string_view(_content.data()+_pos++, 1));
 
       if (current == ',') return createToken(TT_COMMA, std::string_view(_content.data()+_pos++, 1));
+      if (current == ':') return createToken(TT_COLON, std::string_view(_content.data()+_pos++, 1));
       if (current == ';') return createToken(TT_SEMI, std::string_view(_content.data()+_pos++, 1));
 
       if (current == '"') return createToken(TT_DOUBLE_QUOTE, std::string_view(_content.data()+_pos++, 1));
@@ -215,18 +228,24 @@ private:
 
   inline void skipWhitespaces()
   {
-    while (std::iswspace(_content[_pos]))
+    while (isWhiteSpace(_content[_pos]))
     {
       _pos++;
     }
+  }
+
+  inline void incrementLineCount()
+  {
+    _lineCount++;
+    _lineStartOffset = _pos + 1;
   }
 
   inline void skipNewLines()
   {
     while (_content[_pos] == '\n')
     {
-      _lineCount++;
-      _lineStartOffset = _pos + 1;
+      ++_pos;
+      incrementLineCount();
     }
   }
 
@@ -236,8 +255,7 @@ private:
     {
       auto lineEnd = std::find(_content.begin() + _pos, _content.end(), '\n');
       _pos = std::distance(_content.begin(), lineEnd) + 1;
-      _lineCount++;
-      _lineStartOffset = _pos + 1;
+      incrementLineCount();
     }
 
     if (_content[_pos] == '/' && _content[_pos+1] == '*')
@@ -246,17 +264,18 @@ private:
 
       while (_pos < _content.size() - 1 && (_content[_pos] != '*' || _content[_pos+1] != '/'))
       {
-        if (_pos == '\n')
-        {
-          _lineCount++;
-          _lineStartOffset = _pos + 1;
-        }
+        if (_pos == '\n') incrementLineCount();
         ++_pos;
       }
 
       if (_pos >= _content.size() - 1) _pos = _content.size();
       else _pos += 2;
     }
+  }
+
+  inline static constexpr bool isWhiteSpace(char a)
+  {
+    return a == ' ' || a == '\t';
   }
 
 private:
