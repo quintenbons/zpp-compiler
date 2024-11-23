@@ -6,6 +6,7 @@
 #include <memory>
 #include <string_view>
 #include <vector>
+#include <format>
 
 #include "ast/scopes/registers.hpp"
 #include "dbg/errors.hpp"
@@ -16,6 +17,7 @@ namespace ast
 {
 
 static constexpr char ENDL = '\n';
+static constexpr char INDENT = '\t';
 
 enum class LevelSpecifier { Public, Protected, Private };
 
@@ -48,6 +50,11 @@ struct NumberLiteral
   }
 };
 
+struct StringLiteral
+{
+  std::string content;
+};
+
 using Expression = std::variant<
   NumberLiteral
 >;
@@ -63,8 +70,39 @@ struct ReturnStatement
   }
 };
 
+struct InlineAsmStatement
+{
+  using Register = scopes::Register;
+
+  struct BindingRequest
+  {
+    scopes::Register registerTo;
+    std::string varIdentifier;
+  };
+
+  StringLiteral asmBlock;
+  std::vector<BindingRequest> requests;
+
+  void genCode(std::ostream &ss) const
+  {
+    ss << ";-- START -- asm binding requests" << ENDL;
+    // TODO: not assume that every variable is always in rdx
+
+    for (auto &request: requests)
+    {
+      LOG("generating code for request " << request.registerTo);
+      ss << INDENT << std::format("mov {}, {}", regToStr(request.registerTo), regToStr(Register::REG_RAX)) << ENDL;
+    }
+
+    ss << ";-- START -- user defined" << ENDL;
+    ss << asmBlock.content << ENDL;
+    ss << ";-- END -- user defined" << ENDL;
+  }
+};
+
 using Instruction = std::variant<
-  ReturnStatement
+  ReturnStatement,
+  InlineAsmStatement
   // Declaration,
   // Definition,
 >;
@@ -103,6 +141,7 @@ struct Function
     {
       std::visit([&](auto &&instr) { instr.genCode(ss); }, instrVariant);
     }
+    ss << INDENT << "ret" << ENDL;
   };
 };
 
@@ -133,7 +172,6 @@ struct TranslationUnit {
   {
     std::stringstream asmCode;
 
-    asmCode << ENDL;
     asmCode << "section .data" << ENDL;
 
     asmCode << ENDL;
@@ -144,16 +182,15 @@ struct TranslationUnit {
 
     asmCode << ENDL;
     asmCode << "section .text" << ENDL;
-
-    asmCode << ENDL;
-    asmCode << "  global _start" << ENDL;
+    asmCode << INDENT << "global _start" << ENDL;
+    // asmCode << INDENT << "global print:function" << ENDL; // when generating stdlibc
 
     asmCode << ENDL;
     asmCode << "_start:" << ENDL;
-    asmCode << "  call main" << ENDL;
-    asmCode << "  mov rax, 60                  ; Syscall number for exit (60)" << ENDL;
-    asmCode << "  mov rdi, rbx                 ; Exit code (0) expects return of main to be put in rbx for now" << ENDL;
-    asmCode << "  syscall                      ; Make the syscall" << ENDL;
+    asmCode << INDENT << "call main" << ENDL;
+    asmCode << INDENT << "mov rax, 60                  ; Syscall number for exit (60)" << ENDL;
+    asmCode << INDENT << "mov rdi, rbx                 ; Exit code (0) expects return of main to be put in rbx for now" << ENDL;
+    asmCode << INDENT << "syscall                      ; Make the syscall" << ENDL;
 
     for (auto &func: functions)
     {
@@ -173,7 +210,9 @@ struct TranslationUnit {
 #define PURE_NODE_LIST \
   X(Type, "Node_Type") \
   X(NumberLiteral, "Node_NumberLiteral") \
+  X(StringLiteral, "Node_StringLiteral") \
   X(ReturnStatement, "Node_ReturnStatement") \
+  X(InlineAsmStatement, "Node_InlineAsmStatement") \
   X(InstructionList, "Node_InstructionList") \
   X(FunctionParameter, "Node_FunctionParameter") \
   X(FunctionParameterList, "Node_FunctionParameter") \

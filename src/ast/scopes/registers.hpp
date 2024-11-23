@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
+#include <unordered_map>
 
 #include "dbg/errors.hpp"
 
@@ -175,14 +177,29 @@ enum class Register: uint32_t
 
 inline const char *regToStr(Register reg)
 {
-    switch (reg)
-    {
+  switch (reg)
+  {
 #define X(reg, str) case Register::reg: return str;
-        ALL_REGISTERS
+    ALL_REGISTERS
 #undef X
-    default:
-      THROW("Register type not found " << ((uint32_t) reg));
-    }
+  default:
+    THROW("Register type not found " << ((uint32_t) reg));
+  }
+}
+
+inline Register strToReg(std::string_view str) {
+  static const std::unordered_map<std::string_view, Register> strToRegMap = {
+#define X(reg, str) {str, Register::reg},
+    ALL_REGISTERS
+#undef X
+  };
+
+  auto it = strToRegMap.find(str);
+  if (it != strToRegMap.end()) {
+    return it->second;
+  } else {
+    THROW("Register string not found: " << str); // TODO make this a USER_THROW or catch it in the parser
+  }
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Register token) { return os << regToStr(token); }
@@ -190,4 +207,4 @@ inline std::ostream& operator<<(std::ostream& os, const Register token) { return
 // To change later proably?
 constexpr auto returnRegister = scopes::Register::REG_RBX;
 
-}
+} /* namespace scopes */

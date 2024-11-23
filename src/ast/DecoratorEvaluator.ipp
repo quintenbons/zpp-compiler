@@ -32,11 +32,27 @@ void evaluate(NumberLiteral &node)
   logNode(node, node.number);
 }
 
+void evaluate(StringLiteral &node)
+{
+  logNode(node);
+  _depth++;
+  LOG_DEBUG(std::string(_depth * 2, ' ') << node.content);
+  _depth--;
+}
+
 void evaluate(ReturnStatement &node)
 {
   logNode(node);
   _depth++;
   (*this)(*node.expression);
+  _depth--;
+}
+
+void evaluate(InlineAsmStatement &node)
+{
+  logNode(node);
+  _depth++;
+  (*this)(node.asmBlock);
   _depth--;
 }
 
