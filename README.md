@@ -1,18 +1,38 @@
-# C++ Compiler Project
+# Z++: The C++ Compiler Project from Zero
 
-## Quick launch
+Welcome to Z++, a custom C++ compiler project built from scratch
 
-#### `./build.sh && ./cmake-build/cppcomp ./cpp_testbase/simple.cpp`
+## Getting Started Quickly
 
-### Dev
+```bash
+./build.sh  # Build the Z++ compiler
+./cmake-build/bin/z++ ./cpp_testbase/simple.cpp  # Compile a simple C++ program
+```
 
-To setup the work environment and run the compiler:
+## Dependencies
 
-### `. ./setenv.sh`
-### `comp_build -c`
-### `cppcomp ./cpp_testbase/simple.cpp`
+```bash
+sudo apt install nasm
+sudo apt install libboost-all-dev
+sudo apt-get install cmake
+```
 
-Extra dev tools:
+## Development Setup
 
-### Building asm: `comp_build_nasm ./example.asm`
-### Running asm: `comp_run_nasm ./example.asm`
+Setting up your development environment is straightforward and enables you to launch programs with a sub-version of the standard library compiled by z++.
+
+```bash
+source ./setenv.sh                  # Will update your PATH, and add zpp_* commands
+zpp_commands                        # List of available commands
+zpp_build -c                        # Compile the Z++ compiler
+z++ ./cpp_testbase/simple.cpp       # Use Z++ to compile a C++ program
+```
+
+## Additional Development Tools
+
+Z++ also provides tools for working with assembly language:
+
+```bash
+zpp_assemble_binary ./asm_testbase/simple.asm       # Compile an assembly file
+zpp_run_nasm ./asm_testbase/simple.asm              # Execute the compiled assembly code
+```
