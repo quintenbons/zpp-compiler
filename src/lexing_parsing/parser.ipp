@@ -3,6 +3,7 @@
 #include <fstream>
 #include <functional>
 
+#include "ast/scopes/registers.hpp"
 #include "lexer.ipp"
 #include "ast/nodes.hpp"
 #include "dbg/errors.hpp"
@@ -39,6 +40,13 @@ public:
   }
 
 private:
+  inline std::string_view getRawUntil(char breaker)
+  {
+    std::string_view raw = _lexer.getRawUntil(breaker);
+    _currentToken = _lexer.nextToken();
+    return raw;
+  }
+
   inline void nextToken()
   {
     _currentToken = _lexer.nextToken();
@@ -180,7 +188,46 @@ private:
     return functionParams;
   }
 
-  ast::Expression parseNumberLiteral()
+  scopes::Register parseRegisterName()
+  {
+    std::string_view raw = parseRawSingleStringLiteral();
+    USER_ASSERT(raw[0] == '=', "Only ={register} identifiers are supported", _currentToken.position);
+    return scopes::strToReg(raw.substr(1));
+  }
+
+  // "a" "b" won't work, a single double quoted value is possible here, no escape characters are replaced
+  std::string_view parseRawSingleStringLiteral()
+  {
+    USER_ASSERT(_currentToken.type == lexer::TT_DOUBLE_QUOTE, "Expected double quote for literal", _currentToken.position);
+    std::string_view raw = getRawUntil('"');
+    match(lexer::TT_DOUBLE_QUOTE);
+    return raw;
+  }
+
+  // "a" "\tb" is a valid string literal with concat, \t will be replaced by a tab
+  ast::StringLiteral parseStringLiteral()
+  {
+    std::vector<std::string_view> literals;
+    size_t totalSize = 0;
+    while (_currentToken.type == lexer::TT_DOUBLE_QUOTE)
+    {
+      std::string_view singleLiteral = parseRawSingleStringLiteral();
+      totalSize += singleLiteral.size();
+      literals.push_back(std::move(singleLiteral));
+    }
+
+    if (literals.empty()) USER_THROW("Expected a valid string literal", _currentToken.position);
+
+    std::string content;
+    content.reserve(totalSize+1);
+    for (auto &lit: literals) content += lexer::Lexer::replaceEscapes(lit);
+
+    return {
+      .content = std::move(content),
+    };
+  }
+
+  ast::NumberLiteral parseNumberLiteral()
   {
     auto numberView = match(TT_NUMBER);
     return ast::NumberLiteral{utils::readNumber<ast::NumberLiteral::UnderlyingT>(numberView)};
@@ -191,11 +238,60 @@ private:
     return parseNumberLiteral();
   }
 
-  ast::Instruction parseSingleInstruction()
+  ast::ReturnStatement parseReturnStatement()
   {
     match(TT_K_RETURN);
     auto expression = parseExpression();
     return ast::ReturnStatement{std::make_unique<ast::Expression>(std::move(expression))};
+  }
+
+  ast::InlineAsmStatement::BindingRequest parseBindingRequest()
+  {
+    scopes::Register registerTo = parseRegisterName();
+    match(lexer::TT_LPAR);
+    auto ident = match(TT_IDENT);
+    match(lexer::TT_RPAR);
+
+    return {
+      .registerTo=registerTo,
+      .varIdentifier=std::string(ident),
+    };
+  }
+
+  ast::InlineAsmStatement parseInlineAsmStatement()
+  {
+    match(lexer::TT_K_ASM);
+    match(lexer::TT_LPAR);
+
+    ast::StringLiteral asmBlock = parseStringLiteral();
+
+
+    std::vector<ast::InlineAsmStatement::BindingRequest> requests;
+    if (_currentToken.type == lexer::TT_COLON)
+    {
+      match(TT_COLON);
+      requests = parseSeparatedList<ast::InlineAsmStatement::BindingRequest, lexer::TT_COMMA, TRAILING_OPTIONAL, lexer::TT_RPAR>([this](){ return parseBindingRequest(); });
+    }
+
+    match(lexer::TT_RPAR);
+
+    return {
+      .asmBlock=std::move(asmBlock),
+      .requests=std::move(requests),
+    };
+  }
+
+  ast::Instruction parseSingleInstruction()
+  {
+    switch ( _currentToken.type )
+    {
+      case lexer::TT_K_RETURN:
+        return parseReturnStatement();
+      case lexer::TT_K_ASM:
+        return parseInlineAsmStatement();
+      default:
+        USER_THROW("Unexpected token while parsing instruction [" << _currentToken.type << "]", _currentToken.position);
+    }
   }
 
   ast::CodeBlock parseCodeBlock()

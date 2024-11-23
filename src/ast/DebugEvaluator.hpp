@@ -23,11 +23,31 @@ void evaluate(const NumberLiteral &node)
   logNode(node, node.number);
 }
 
+void evaluate(const StringLiteral &node)
+{
+  logNode(node);
+  _depth++;
+  LOG_DEBUG(std::string(_depth * 2, ' ') << node.content);
+  _depth--;
+}
+
 void evaluate(const ReturnStatement &node)
 {
   logNode(node);
   _depth++;
   (*this)(*node.expression);
+  _depth--;
+}
+
+void evaluate(const InlineAsmStatement &node)
+{
+  logNode(node, "Register binding request count: ", node.requests.size());
+  _depth++;
+  for (auto &request: node.requests)
+  {
+    LOG_DEBUG(std::string(_depth * 2, ' ') << "[Request] " << request.registerTo << "(" << request.varIdentifier << ")");
+  }
+  (*this)(node.asmBlock);
   _depth--;
 }
 

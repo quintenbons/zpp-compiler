@@ -181,6 +181,37 @@ public:
     return value;
   }
 
+  static std::string replaceEscapes(std::string_view input) {
+    std::string result;
+    result.reserve(input.size());
+
+    for (size_t i = 0; i < input.size(); ++i) {
+      if (input[i] == '\\')
+      {
+        if (i + 1 < input.size())
+        {
+          switch (input[i + 1])
+          {
+            case 't':   result += '\t'; break;
+            case 'n':   result += '\n'; break;
+            case '\\':  result += '\\'; break;
+            case '"':   result += '"';  break;
+            default: THROW("Unknown escape sequence: \\" + std::string(1, input[i + 1]));
+          }
+          ++i;
+        }
+        else
+        {
+          THROW("Incomplete escape sequence at end of string");
+        }
+      } else {
+        result += input[i];
+      }
+    }
+
+    return result;
+  }
+
 private:
   Token number()
   {
