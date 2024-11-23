@@ -175,7 +175,7 @@ private:
   ast::FunctionParameterList parseFunctionParams()
   {
     match(TT_LPAR);
-    auto functionParams = parseSeparatedList<ast::FunctionParameter, TT_COMMA, TRAILING_FORBIDDEN, TT_NONE>([this]() { return parseSingleParam(); });
+    auto functionParams = parseSeparatedList<ast::FunctionParameter, TT_COMMA, TRAILING_FORBIDDEN, TT_RPAR>([this]() { return parseSingleParam(); });
     match(TT_RPAR);
     return functionParams;
   }
