@@ -4,15 +4,10 @@
 #include <variant>
 #include <string>
 
+#include "registers.hpp"
+
 namespace scopes
 {
-
-enum RegisterID
-{
-  eax,
-  ebx,
-  ecx,
-};
 
 struct GlobalStackOffset
 {
@@ -25,12 +20,6 @@ struct LocalStackOffset
   size_t _size;
   size_t _byteOffset;
 };
-
-struct Register
-{
-  RegisterID id;
-};
-
 
 using LocationDescription = std::variant<
   Register,

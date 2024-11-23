@@ -1,13 +1,10 @@
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <cassert>
 
+#include "codegen/generate.hpp"
 #include "core/TranslationUnitHandle.hpp"
-#include "dbg/errors.hpp"
-#include "lexing_parsing/parser.ipp"
 #include "ast/DebugEvaluator.hpp"
-#include "ast/MockEvaluator.hpp"
 
 int main(int argc, char** argv)
 {
@@ -27,4 +24,26 @@ int main(int argc, char** argv)
   LOG("");
   LOG("== Done decorating");
   ast::DebugEvaluator()(*translationUnitHandle.getOrCreateTranslationUnit());
+  LOG("");
+  LOG("== Generating code");
+  std::string generatedAsm = codegen::generateAsm(*translationUnitHandle.getOrCreateTranslationUnit());
+  LOG("== Generated asm to a.asm:");
+  std::cout << generatedAsm;
+  std::ofstream("./a.asm", std::ios_base::out) << generatedAsm;
+
+  LOG("== Generated .o as a.o:");
+  int nasmResult = std::system("nasm -f elf64 ./a.asm -o ./a.o");
+  if (nasmResult != 0) {
+    std::cerr << "Error: nasm command failed with exit code " << nasmResult
+              << std::endl;
+    return nasmResult;
+  }
+
+  LOG("== Generating exe as a.out:");
+  int ldResult = std::system("ld ./a.o -o ./a.out");
+  if (ldResult != 0) {
+    std::cerr << "Error: ld command failed with exit code " << ldResult
+              << std::endl;
+    return ldResult;
+  }
 }

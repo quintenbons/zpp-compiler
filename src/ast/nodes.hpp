@@ -1,15 +1,21 @@
 #pragma once
 
+#include <ostream>
+#include <sstream>
 #include <variant>
 #include <memory>
 #include <string_view>
 #include <vector>
 
+#include "ast/scopes/registers.hpp"
+#include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
 #include "scopes/types.hpp"
 
 namespace ast
 {
+
+static constexpr char ENDL = '\n';
 
 enum class LevelSpecifier { Public, Protected, Private };
 
@@ -35,6 +41,11 @@ struct NumberLiteral
   using UnderlyingT = uint64_t;
 
   UnderlyingT number;
+
+  void loadValueInRegister(std::ostream &ss, scopes::Register targetRegister)
+  {
+    ss << "  mov " << scopes::regToStr(targetRegister) << ", " << number << ENDL;
+  }
 };
 
 using Expression = std::variant<
@@ -44,6 +55,12 @@ using Expression = std::variant<
 struct ReturnStatement
 {
   std::unique_ptr<Expression> expression;
+
+  void genCode(std::ostream &ss) const
+  {
+    std::visit([&ss](auto &&expr) { expr.loadValueInRegister(ss, scopes::returnRegister); }, *expression );
+    ss << "  ret" << ENDL;
+  }
 };
 
 using Instruction = std::variant<
@@ -76,6 +93,17 @@ struct Function
   std::string_view name;
   FunctionParameterList parameters;
   CodeBlock body;
+
+  void genCode(std::ostream &ss) const
+  {
+    std::stringstream asmCode;
+    ss << ENDL;
+    ss << name << ":" << ENDL;
+    for (auto &instrVariant: body)
+    {
+      std::visit([&](auto &&instr) { instr.genCode(ss); }, instrVariant);
+    }
+  };
 };
 
 using Method = Function;
@@ -95,6 +123,51 @@ struct Class
 struct TranslationUnit {
   std::vector<Function> functions;
   std::vector<Class> classes;
+
+  inline bool isDecorated() const
+  {
+    return true;
+  }
+
+  inline std::string genAsm_x86_64() const
+  {
+    std::stringstream asmCode;
+
+    asmCode << ENDL;
+    asmCode << "section .data" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "section .rodata" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "section .bss" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "section .text" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "  global _start" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "_start:" << ENDL;
+    asmCode << "  call main" << ENDL;
+    asmCode << "  mov rax, 60                  ; Syscall number for exit (60)" << ENDL;
+    asmCode << "  mov rdi, rbx                 ; Exit code (0) expects return of main to be put in rbx for now" << ENDL;
+    asmCode << "  syscall                      ; Make the syscall" << ENDL;
+
+    for (auto &func: functions)
+    {
+      func.genCode(asmCode);
+    }
+
+    for (auto &classNode: classes)
+    {
+      (void) classNode;
+      TODO("Implement classNodes");
+    }
+
+    return asmCode.str();
+  }
 };
 
 #define PURE_NODE_LIST \
