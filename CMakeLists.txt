@@ -8,7 +8,10 @@ set(CMAKE_CXX_COMPILER g++-13)
 
 set(SRC_DIR "src")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(PARSER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/main.cpp
   ${SRC_DIR}/lexing_parsing/lexer.ipp
@@ -31,7 +34,7 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/ast/MockEvaluator.hpp
 )
 
-project(MyCppCompiler VERSION 0.1 LANGUAGES CXX)
+project(cppcomp VERSION 0.1 LANGUAGES CXX)
 
 add_executable(${CMAKE_PROJECT_NAME} ${MAIN_PROGRAM_SOURCES})
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
