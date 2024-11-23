@@ -37,14 +37,16 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/ast/MockEvaluator.hpp
 )
 
-project(cppcomp VERSION 0.1 LANGUAGES CXX)
+set(COMPILER_NAME z++)
 
-add_executable(${CMAKE_PROJECT_NAME} ${MAIN_PROGRAM_SOURCES})
-target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${SRC_DIR})
+project(zpp-compiler VERSION 0.1 LANGUAGES CXX)
+
+add_executable(${COMPILER_NAME} ${MAIN_PROGRAM_SOURCES})
+target_compile_options(${COMPILER_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_include_directories(${COMPILER_NAME} PRIVATE ${SRC_DIR})
 
 find_library(BACKTRACE_LIBRARY NAMES backtrace PATHS /usr/local/lib NO_DEFAULT_PATH)
 if(BACKTRACE_LIBRARY)
   add_definitions(-DBOOST_STACKTRACE_USE_BACKTRACE)
-  target_link_libraries(${CMAKE_PROJECT_NAME} ${BACKTRACE_LIBRARY})
+  target_link_libraries(${COMPILER_NAME} ${BACKTRACE_LIBRARY})
 endif()
