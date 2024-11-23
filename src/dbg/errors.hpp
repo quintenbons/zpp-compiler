@@ -57,3 +57,5 @@
       USER_THROW(msg, __VA_ARGS__); \
     }                               \
   } while (0)
+
+#define TODO(msg) THROW("TODO " << msg)

@@ -1,15 +1,19 @@
 #pragma once
 
+#include <sstream>
 #include <variant>
 #include <memory>
 #include <string_view>
 #include <vector>
 
+#include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
 #include "scopes/types.hpp"
 
 namespace ast
 {
+
+static constexpr char ENDL = '\n';
 
 enum class LevelSpecifier { Public, Protected, Private };
 
@@ -44,6 +48,12 @@ using Expression = std::variant<
 struct ReturnStatement
 {
   std::unique_ptr<Expression> expression;
+
+  void genCode(std::ostream &ss) const
+  {
+    // charger dans le registre eax la val de expression
+    ss << "  ret" << ENDL;
+  }
 };
 
 using Instruction = std::variant<
@@ -76,6 +86,17 @@ struct Function
   std::string_view name;
   FunctionParameterList parameters;
   CodeBlock body;
+
+  void genCode(std::ostream &ss) const
+  {
+    std::stringstream asmCode;
+    ss << ENDL;
+    ss << name << ":" << ENDL;
+    for (auto &instrVariant: body)
+    {
+      std::visit([&](auto &&instr) { instr.genCode(ss); }, instrVariant);
+    }
+  };
 };
 
 using Method = Function;
@@ -95,6 +116,51 @@ struct Class
 struct TranslationUnit {
   std::vector<Function> functions;
   std::vector<Class> classes;
+
+  inline bool isDecorated() const
+  {
+    return true;
+  }
+
+  inline std::string genAsm_x86_64() const
+  {
+    std::stringstream asmCode;
+
+    asmCode << ENDL;
+    asmCode << "section .data" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "section .rodata" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "section .bss" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "section .text" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "  global _start" << ENDL;
+
+    asmCode << ENDL;
+    asmCode << "_start:" << ENDL;
+    asmCode << "  call main" << ENDL;
+    asmCode << "  mov rax, 60                  ; Syscall number for exit (60)" << ENDL;
+    asmCode << "  xor rdi, rdi                 ; Exit code (0)" << ENDL;
+    asmCode << "  syscall                      ; Make the syscall" << ENDL;
+
+    for (auto &func: functions)
+    {
+      func.genCode(asmCode);
+    }
+
+    for (auto &classNode: classes)
+    {
+      (void) classNode;
+      TODO("Implement classNodes");
+    }
+
+    return asmCode.str();
+  }
 };
 
 #define PURE_NODE_LIST \
