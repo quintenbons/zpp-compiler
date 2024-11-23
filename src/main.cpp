@@ -7,7 +7,6 @@
 #include "dbg/errors.hpp"
 #include "lexing_parsing/parser.ipp"
 #include "ast/DebugEvaluator.hpp"
-#include "ast/MockEvaluator.hpp"
 
 int main(int argc, char** argv)
 {
@@ -19,6 +18,6 @@ int main(int argc, char** argv)
   }
 
   auto translationUnitHandle = core::TranslationUnitHandle(args[1]);
-  // ast::evaluate<ast::MockEvaluator>([]() { return ast::MockEvaluator(); }, translationUnit);
-  ast::DebugEvaluator()(*translationUnitHandle.getOrCreateTranslationUnit());
+  ast::DebugEvaluator debugEvaluator;
+  translationUnitHandle.getOrCreateTranslationUnit()->debugEvaluate(debugEvaluator);
 }

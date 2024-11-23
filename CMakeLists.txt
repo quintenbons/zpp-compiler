@@ -13,7 +13,6 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/lexing_parsing/lexer.ipp
   ${SRC_DIR}/lexing_parsing/parser.ipp
   ${SRC_DIR}/ast/nodes.hpp
-  ${SRC_DIR}/ast/InterfaceEvaluator.hpp
   ${SRC_DIR}/dbg/errors.hpp
   ${SRC_DIR}/dbg/logger.hpp
   ${SRC_DIR}/dbg/utils.hpp
@@ -21,7 +20,6 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/core/TranslationUnitHandle.hpp
 
   ${SRC_DIR}/ast/DebugEvaluator.hpp
-  ${SRC_DIR}/ast/MockEvaluator.hpp
 )
 
 project(MyCppCompiler VERSION 0.1 LANGUAGES CXX)

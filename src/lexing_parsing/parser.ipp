@@ -32,10 +32,7 @@ public:
     }
     match(TT_END);
 
-    return {
-      .functions = std::move(funcList),
-      .classes = std::move(classList),
-    };
+    return ast::TranslationUnit(std::move(funcList), std::move(classList));
   }
 
 private:
@@ -113,43 +110,35 @@ private:
       match(TT_STAR);
       pointerDepth++;
     }
-    return { pureType, pointerDepth };
+
+    return ast::Type{ std::move(pureType), std::move(pointerDepth) };
   }
 
   ast::Function parseFunction()
   {
-    return {
-      .returnType = parseType(),
-      .name = match(TT_IDENT),
-      .parameters = parseFunctionParams(),
-      .body = parseCodeBlock(),
-    };
+    return ast::Function(
+      parseCodeBlock(),
+      parseFunctionParams(),
+      match(TT_IDENT),
+      parseType()
+    );
   }
 
   ast::Class parseClass() {
     nextToken();
     ast::Class c;
     c.name = match(TT_IDENT);
-
     match(TT_LCURL);
     while (_currentToken.type != TT_RCURL) {
-      ast::AccessSpecifier attribute_specifier { .level = ast::LevelSpecifier::Private };
+      ast::AccessSpecifier attribute_specifier (ast::LevelSpecifier::Private);
       ast::Type type = parseType();
       std::string_view name = match(TT_IDENT);
       if (_currentToken.type == TT_LPAR) {
-        ast::Function method = {
-          .returnType = type,
-          .name = name,
-          .parameters = parseFunctionParams(),
-          .body = parseCodeBlock(),
-        };
+        ast::Method method (parseCodeBlock(), parseFunctionParams(), std::move(name), std::move(type));
         c.methods.emplace_back(std::make_pair(std::move(method), attribute_specifier));
       }
       else {
-        ast::Attribute attribute = {
-          .type = type,
-          .name = name,
-        };
+        ast::Attribute attribute (std::move(name), std::move(type));
         c.attributes.emplace_back(std::make_pair(attribute, attribute_specifier));
         match(TT_SEMI);
       }
@@ -166,10 +155,7 @@ private:
     std::string_view name{};
     if (_currentToken.type == TT_IDENT) name = match(TT_IDENT);
 
-    return {
-      .type = type,
-      .name = name,
-    };
+    return ast::FunctionParameter(std::move(name), std::move(type));
   }
 
   ast::FunctionParameterList parseFunctionParams()
@@ -177,13 +163,13 @@ private:
     match(TT_LPAR);
     auto functionParams = parseSeparatedList<ast::FunctionParameter, TT_COMMA, TRAILING_FORBIDDEN, TT_NONE>([this]() { return parseSingleParam(); });
     match(TT_RPAR);
-    return functionParams;
+    return ast::FunctionParameterList(std::move(functionParams));
   }
 
   ast::Expression parseNumberLiteral()
   {
     auto numberView = match(TT_NUMBER);
-    return ast::NumberLiteral{utils::readNumber<ast::NumberLiteral::UnderlyingT>(numberView)};
+    return ast::Expression(ast::NumberLiteral(utils::readNumber<ast::NumberLiteral::UnderlyingT>(numberView)));
   }
 
   ast::Expression parseExpression()
@@ -195,7 +181,8 @@ private:
   {
     match(TT_K_RETURN);
     auto expression = parseExpression();
-    return ast::ReturnStatement{std::make_unique<ast::Expression>(std::move(expression))};
+    ast::ReturnStatement returnStmt(std::make_unique<ast::Expression>(std::move(expression)));
+    return ast::Instruction(std::move(returnStmt));
   }
 
   ast::CodeBlock parseCodeBlock()
@@ -203,7 +190,7 @@ private:
     match(TT_LCURL);
     auto instructions = parseSeparatedList<ast::Instruction, TT_SEMI, TRAILING_REQUIRED, TT_RCURL>([this]() { return parseSingleInstruction(); });
     match(TT_RCURL);
-    return instructions;
+    return ast::CodeBlock(std::move(instructions));
   }
 
 private:
