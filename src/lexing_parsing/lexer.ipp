@@ -109,16 +109,21 @@ public:
   {
   }
 
+  inline FilePosition currentPosition(size_t offsetCorrection = 0)
+  {
+    return {
+      _lineCount,
+      _pos - _lineStartOffset - offsetCorrection,
+      currentLine(),
+    };
+  }
+
   inline Token createToken(TokenType type, std::string_view value, size_t offsetCorrection = 0)
   {
     return Token {
       type,
       value,
-      {
-        _lineCount,
-        _pos - _lineStartOffset - offsetCorrection,
-        currentLine(),
-      }
+      currentPosition(offsetCorrection),
     };
   }
 
@@ -162,7 +167,7 @@ public:
 
       if (current == '"') return createToken(TT_DOUBLE_QUOTE, std::string_view(_content.data()+_pos++, 1));
 
-      USER_THROW("Lexing failure: unknown character at pos[" << _pos << "]: [" << current << "]");
+      USER_THROW("Lexing failure: unknown character at pos[" << _pos << "]: [" << current << "]", currentPosition());
     }
 
     return createToken(TT_END, std::string_view());
