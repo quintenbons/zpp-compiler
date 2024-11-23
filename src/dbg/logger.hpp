@@ -35,7 +35,7 @@ static std::ostream &defaultEStream = std::cerr;
 #define _LOG(stream, msg)                                                      \
   do {                                                                         \
     LOG_INLINE(msg);                                                           \
-    stream << std::endl;                                                       \
+    stream << ::std::endl;                                                       \
   } while (0)
 
 #define LOG(msg) _LOG(defaultOStream, msg)

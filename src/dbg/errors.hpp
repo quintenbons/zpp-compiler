@@ -9,7 +9,7 @@
   {                                             \
     LOG_ERROR(msg);                             \
     LOG_ERROR(boost::stacktrace::stacktrace()); \
-    std::exit(1);                               \
+    ::std::exit(1);                               \
   } while (0)
 
 #define DEBUG_ASSERT(cond, ...)                                      \

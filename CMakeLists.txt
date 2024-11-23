@@ -17,8 +17,6 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/lexing_parsing/lexer.ipp
   ${SRC_DIR}/lexing_parsing/parser.ipp
   ${SRC_DIR}/ast/nodes.hpp
-  ${SRC_DIR}/ast/InterfaceEvaluator.hpp
-
   ${SRC_DIR}/ast/scopes/scopeStack.hpp
   ${SRC_DIR}/ast/scopes/types.hpp
   ${SRC_DIR}/ast/scopes/memory_x86_64.hpp
@@ -34,7 +32,6 @@ set(MAIN_PROGRAM_SOURCES
 
   ${SRC_DIR}/ast/DebugEvaluator.hpp
   ${SRC_DIR}/ast/DecoratorEvaluator.ipp
-  ${SRC_DIR}/ast/MockEvaluator.hpp
 )
 
 set(COMPILER_NAME z++)
@@ -42,7 +39,9 @@ set(COMPILER_NAME z++)
 project(zpp-compiler VERSION 0.1 LANGUAGES CXX)
 
 add_executable(${COMPILER_NAME} ${MAIN_PROGRAM_SOURCES})
-target_compile_options(${COMPILER_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+# We removed the warning missing-field-initializers because a bug is present for empty structs before gcc 14 (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=110064)
+target_compile_options(${COMPILER_NAME} PRIVATE 
+    -Wall -Wextra -Wpedantic -Werror -Wno-missing-field-initializers)
 target_include_directories(${COMPILER_NAME} PRIVATE ${SRC_DIR})
 target_compile_definitions(${COMPILER_NAME} PRIVATE -DZPP_DEBUG_MODE)
 

@@ -18,10 +18,16 @@ public:
     _parser = std::make_unique<parser::Parser>(std::move(inputFile));
   }
 
-  const ast::TranslationUnit *getOrCreateTranslationUnit()
+  ast::TranslationUnit *getOrCreateTranslationUnit()
   {
     parseIfNeeded();
     return _translationUnit.get();
+  }
+
+  void debug()
+  {
+    ast::DebugEvaluator debugEvaluator;
+    getOrCreateTranslationUnit()->debug(debugEvaluator);
   }
 
   void decorate()
@@ -30,8 +36,8 @@ public:
 
     parseIfNeeded();
     _scopeStack = std::make_unique<scopes::ScopeStack>();
-    ast::DecoratorEvaluator decorator(*_scopeStack);
-    decorator(*_translationUnit);
+    ast::DecoratorEvaluator decoratorEvaluator(*_scopeStack);
+    getOrCreateTranslationUnit()->decorate(decoratorEvaluator);
     _scopeStack->logDebug();
   }
 
