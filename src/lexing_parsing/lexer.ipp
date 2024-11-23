@@ -25,6 +25,7 @@ namespace keywords
   constexpr const char KW_INT[] = "int";
   constexpr const char KW_VOID[] = "void";
   constexpr const char KW_CHAR[] = "char";
+  constexpr const char KW_ASM[] = "asm";
 }
 
 #define TOKEN_LIST \
@@ -46,6 +47,8 @@ namespace keywords
     X(TT_K_VOID, "TT_K_VOID") \
     X(TT_K_CHAR, "TT_K_CHAR") \
     \
+    X(TT_K_ASM, "TT_K_ASM") \
+    \
     X(TT_PLUS, "TT_PLUS") \
     X(TT_MINUS, "TT_MINUS") \
     X(TT_STAR, "TT_STAR") \
@@ -57,6 +60,7 @@ namespace keywords
     X(TT_RPAR, "TT_RPAR") \
     X(TT_LCURL, "TT_LCURL") \
     X(TT_RCURL, "TT_RCURL") \
+    X(TT_DOUBLE_QUOTE, "TT_DOUBLE_QUOTE") \
     \
     X(TT_COMMA, "TT_COMMA") \
     X(TT_SEMI, "TT_SEMI") \
@@ -121,19 +125,9 @@ public:
     std::string currentStr{};
     while (_pos < _content.size())
     {
+      if (skipIgnoredCharacters()) continue;
+
       char current = _content[_pos];
-
-      if (current == '\n')
-      {
-        _lineCount++;
-        _lineStartOffset = _pos + 1;
-      }
-
-      if (std::iswspace(current))
-      {
-        _pos++;
-        continue;
-      }
 
       if (std::isdigit(current)) return number();
       if (std::isalpha(current)) return identifier();
@@ -152,6 +146,8 @@ public:
 
       if (current == ',') return createToken(TT_COMMA, std::string_view(_content.data()+_pos++, 1));
       if (current == ';') return createToken(TT_SEMI, std::string_view(_content.data()+_pos++, 1));
+
+      if (current == '"') return createToken(TT_DOUBLE_QUOTE, std::string_view(_content.data()+_pos++, 1));
 
       USER_THROW("Lexing failure: unknown character at pos[" << _pos << "]: [" << current << "]");
     }
@@ -197,7 +193,70 @@ private:
     if (value == keywords::KW_VOID) return createToken(TT_K_VOID, keywords::KW_VOID);
     if (value == keywords::KW_CHAR) return createToken(TT_K_CHAR, keywords::KW_CHAR);
 
+    if (value == keywords::KW_ASM) return createToken(TT_K_ASM, keywords::KW_ASM);
+
     return createToken(TT_IDENT, value);
+  }
+
+  inline bool skipIgnoredCharacters()
+  {
+    size_t firstPos = _pos;
+    size_t lastPos;
+    do
+    {
+      lastPos = _pos;
+      skipWhitespaces();
+      skipNewLines();
+      skipComments();
+    } while (_pos != lastPos);
+
+    return _pos != firstPos;
+  }
+
+  inline void skipWhitespaces()
+  {
+    while (std::iswspace(_content[_pos]))
+    {
+      _pos++;
+    }
+  }
+
+  inline void skipNewLines()
+  {
+    while (_content[_pos] == '\n')
+    {
+      _lineCount++;
+      _lineStartOffset = _pos + 1;
+    }
+  }
+
+  inline void skipComments()
+  {
+    if (_content[_pos] == '/' && _content[_pos+1] == '/')
+    {
+      auto lineEnd = std::find(_content.begin() + _pos, _content.end(), '\n');
+      _pos = std::distance(_content.begin(), lineEnd) + 1;
+      _lineCount++;
+      _lineStartOffset = _pos + 1;
+    }
+
+    if (_content[_pos] == '/' && _content[_pos+1] == '*')
+    {
+      _pos = _pos + 2;
+
+      while (_pos < _content.size() - 1 && (_content[_pos] != '*' || _content[_pos+1] != '/'))
+      {
+        if (_pos == '\n')
+        {
+          _lineCount++;
+          _lineStartOffset = _pos + 1;
+        }
+        ++_pos;
+      }
+
+      if (_pos >= _content.size() - 1) _pos = _content.size();
+      else _pos += 2;
+    }
   }
 
 private:
