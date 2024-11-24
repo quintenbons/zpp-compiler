@@ -83,6 +83,7 @@ zpp_test_cpp() {
   if [ -d "$res_path" ] ; then
     rm -r $res_path
   fi
+  poetry install
   poetry run pytest ./regression/cpp_testbase_test.py $@
   popd
 }
