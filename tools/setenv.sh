@@ -2,6 +2,9 @@ SCRIPT_PATH="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)
 
 export ZPP_REPO_PATH=$(realpath $SCRIPT_PATH/..)
 export ZPP_BUILD_PATH="$ZPP_REPO_PATH/cmake-build"
+export ZPP_CPP_TESTBASE="$ZPP_REPO_PATH/cpp_testbase"
+export ZPP_ASM_TESTBASE="$ZPP_REPO_PATH/asm_testbase"
+export ZPP_TEST_PATH="$ZPP_REPO_PATH/test"
 export ZPP_BIN_PATH="$ZPP_BUILD_PATH/bin"
 export ZPP_ARTIFACTS_PATH="$ZPP_BUILD_PATH/.artifacts"
 
@@ -21,6 +24,10 @@ zpp_build             build all targets (-c/-d)
 zpp_nasm              nasm with recommended flags
 zpp_assemble_binary   assemble and link .asm files to ./a.out
 zpp_run_nasm          assemble, link and execute .asm files
+
+zpp_test_cpp          run regression tests on c++ test base
+zpp_test_cpp_debug    run regression tests on c++ test base with more verbose output
+zpp_test_asm          run assembly tests
 """
 }
 
@@ -67,4 +74,27 @@ zpp_run_nasm() {
   local nasm_file=$1
   local exe_path=$(_zpp_build_nasm $nasm_file)
   $exe_path
+}
+
+zpp_test_cpp() {
+  echo "Running C++ tests..."
+  pushd $ZPP_TEST_PATH
+  local res_path=./regression/results/cpp_testbase
+  if [ -d "$res_path" ] ; then
+    rm -r $res_path
+  fi
+  poetry run pytest ./regression/cpp_testbase_test.py $@
+  popd
+}
+
+zpp_test_cpp_debug() {
+  zpp_test_cpp --log-cli-level=debug -v $@
+}
+
+zpp_test_asm() {
+  echo "Running Assembly tests..."
+  echo "Does not yet exist"
+  # pushd $ZPP_ASM_TESTBASE
+  # pytest ./regression/asm_testbase_test.py
+  # popd
 }

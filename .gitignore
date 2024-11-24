@@ -3,3 +3,17 @@ cmake-build
 compile_commands.json
 .cache
 .artifacts
+
+# General Python ignores
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache
+
+# Virtual environment
+.venv
+venv/
+ENV/
+
+# Poetry
+poetry.lock

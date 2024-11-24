@@ -36,3 +36,13 @@ Z++ also provides tools for working with assembly language:
 zpp_assemble_binary ./asm_testbase/simple.asm       # Compile an assembly file
 zpp_run_nasm ./asm_testbase/simple.asm              # Execute the compiled assembly code
 ```
+
+## Tests
+
+Z++ has a regression test framework that depends on python 3.10, poetry and pytest
+
+```bash
+pip install poetry # install poetry
+zpp_test_cpp # launch tests
+zpp_test_cpp_debug # launch tests (more verbose)
+```
