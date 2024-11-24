@@ -20,28 +20,39 @@
 #define BOLDCYAN "\033[1m\033[36m"    /* Bold Cyan */
 #define BOLDWHITE "\033[1m\033[37m"   /* Bold White */
 
-static std::ostream &defaultOstream = std::cout;
+#ifdef ZPP_DEBUG_MODE
+static constexpr bool _zppDebugMode = true;
+#else
+static constexpr bool _zppDebugMode = false;
+#endif
 
-#define LOG_INLINE(msg)    \
-  do                       \
-  {                        \
-    defaultOstream << msg; \
+static std::ostream &defaultOStream = std::cout;
+static std::ostream &defaultEStream = std::cerr;
+
+#define _LOG_INLINE(stream, msg) stream << msg;
+#define LOG_INLINE(msg) _LOG_INLINE(defaultOStream, msg)
+
+#define _LOG(stream, msg)                                                      \
+  do {                                                                         \
+    LOG_INLINE(msg);                                                           \
+    stream << std::endl;                                                       \
   } while (0)
 
-#define LOG(msg)                 \
-  do                             \
-  {                              \
-    LOG_INLINE(msg);             \
-    defaultOstream << std::endl; \
+#define LOG(msg) _LOG(defaultOStream, msg)
+
+#define _LOG_COLOR(stream, msg, color)                                         \
+  do {                                                                         \
+    stream << color;                                                           \
+    _LOG(stream, msg);                                                         \
+    stream << RESET;                                                           \
   } while (0)
 
-#define LOG_COLOR(msg, color) \
-  do                          \
-  {                           \
-    defaultOstream << color;  \
-    LOG(msg);                 \
-    defaultOstream << RESET;  \
-  } while (0)
+#define LOG_COLOR(msg, color) _LOG_COLOR(defaultOStream, msg, color)
 
-#define LOG_ERROR(msg) LOG_COLOR(msg, RED)
-#define LOG_DEBUG(msg) LOG_COLOR(msg, MAGENTA)
+#define LOG_ERROR(msg) _LOG_COLOR(defaultEStream, msg, RED)
+#define LOG_DEBUG(msg)                                                         \
+  do {                                                                         \
+    if constexpr (_zppDebugMode) {                                             \
+      LOG_COLOR(msg, MAGENTA);                                                 \
+    }                                                                          \
+  } while (0)

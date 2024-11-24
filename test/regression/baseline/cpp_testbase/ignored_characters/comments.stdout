@@ -1,0 +1,55 @@
+[35m[Node_TranslationUnit] Function count: 1
+[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
+[0m[35m    [Node_Type] int
+[0m[35m    [Node_FunctionParameter] ParameterCount: 0
+[0m[35m    [Node_InstructionList] InstructionCount: 1
+[0m[35m      [Node_ReturnStatement] 
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m[Node_TranslationUnit] Class count: 0
+[0m
+== Decorating
+[35m[Node_TranslationUnit] Function count: 1
+[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
+[0m[35m    [Node_Type] Type: int
+[0m[35m    [Node_FunctionParameter] ParameterCount: 0
+[0m[35m    [Node_InstructionList] InstructionCount: 1
+[0m[35m      [Node_ReturnStatement] 
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35mScopeStack of 1 scopes
+[0m[35m[Scope] id=0 ; parent=0
+  [Type] id=1 ; name=int ; size=32
+  [Type] id=0 ; name=void ; size=0
+[0m
+== Done decorating
+[35m[Node_TranslationUnit] Function count: 1
+[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
+[0m[35m    [Node_Type] int
+[0m[35m    [Node_FunctionParameter] ParameterCount: 0
+[0m[35m    [Node_InstructionList] InstructionCount: 1
+[0m[35m      [Node_ReturnStatement] 
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m[Node_TranslationUnit] Class count: 0
+[0m
+== Generating code
+== Generated asm to a.asm:
+section .data
+
+section .rodata
+
+section .bss
+
+section .text
+	global _start
+
+_start:
+	call main
+	mov rax, 60                  ; Syscall number for exit (60)
+	mov rdi, rbx                 ; Exit code (0) expects return of main to be put in rbx for now
+	syscall                      ; Make the syscall
+
+main:
+  mov rbx, 0
+  ret
+	ret
+== Generated .o as a.o:
+== Generating exe as a.out:

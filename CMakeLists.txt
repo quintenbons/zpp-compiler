@@ -44,6 +44,7 @@ project(zpp-compiler VERSION 0.1 LANGUAGES CXX)
 add_executable(${COMPILER_NAME} ${MAIN_PROGRAM_SOURCES})
 target_compile_options(${COMPILER_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_include_directories(${COMPILER_NAME} PRIVATE ${SRC_DIR})
+target_compile_definitions(${COMPILER_NAME} PRIVATE -DZPP_DEBUG_MODE)
 
 find_library(BACKTRACE_LIBRARY NAMES backtrace PATHS /usr/local/lib NO_DEFAULT_PATH)
 if(BACKTRACE_LIBRARY)

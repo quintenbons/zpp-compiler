@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 
   if (args.size() != 2) {
     std::cerr << "Usage: " << args[0] << " [inputfile]" << std::endl;
-    return 0;
+    return 1;
   }
 
   auto translationUnitHandle = core::TranslationUnitHandle(args[1]);
