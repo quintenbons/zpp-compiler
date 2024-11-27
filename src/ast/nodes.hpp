@@ -17,8 +17,7 @@ concept HasDebugEvaluate = requires(const T &obj, DebugEvaluator &evaluator) {
   { obj.debugEvaluate(evaluator) } -> std::same_as<void>;
 };
 
-template <typename NodeType> class AstNode {
-public:
+template <typename NodeType> struct AstNode {
   inline void debugEvaluate(DebugEvaluator &evaluator) const
     requires HasDebugEvaluate<NodeType>
   {
@@ -33,12 +32,9 @@ public:
 };
 
 struct Type : public AstNode<Type> {
+  static constexpr const char *node_name = "Node_Type";
   std::string_view name;
   int pointerDepth;
-  static constexpr const char *node_name = "Node_Type";
-
-  Type(std::string_view &&name, int &&pointerDepth)
-      : name{name}, pointerDepth{pointerDepth} {}
 
   inline std::string fullName() const {
     return std::string(name) + std::string(pointerDepth, '*');
@@ -50,12 +46,10 @@ struct Type : public AstNode<Type> {
 };
 
 struct NumberLiteral : public AstNode<NumberLiteral> {
+  static constexpr const char *node_name = "Node_NumberLiteral";
   using UnderlyingT = uint64_t;
 
   UnderlyingT number;
-  static constexpr const char *node_name = "Node_NumberLiteral";
-
-  NumberLiteral(UnderlyingT &&number) : number{number} {}
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, number);
@@ -63,10 +57,8 @@ struct NumberLiteral : public AstNode<NumberLiteral> {
 };
 
 struct Expression : public AstNode<Expression> {
-  std::variant<NumberLiteral> instruction;
   static constexpr const char *node_name = "Node_Expression";
-
-  Expression(NumberLiteral &&numberLiteral) : instruction{numberLiteral} {}
+  std::variant<NumberLiteral> instruction;
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     std::visit(
@@ -76,14 +68,8 @@ struct Expression : public AstNode<Expression> {
 };
 
 struct ReturnStatement : public AstNode<ReturnStatement> {
-  std::unique_ptr<Expression> expression;
   static constexpr const char *node_name = "Node_ReturnStatement";
-
-  ReturnStatement(std::unique_ptr<Expression> expression)
-      : expression{std::move(expression)} {}
-
-  ReturnStatement(const ReturnStatement &rs)
-      : expression{std::make_unique<Expression>(*rs.expression)} {}
+  std::unique_ptr<Expression> expression;
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this);
@@ -94,17 +80,13 @@ struct ReturnStatement : public AstNode<ReturnStatement> {
 };
 
 struct Instruction : public AstNode<Instruction> {
+  static constexpr const char *node_name = "Node_Instruction";
   using InstructionVariant = std::variant<ReturnStatement
                                           // Declaration,
                                           // Definition,
                                           >;
 
   InstructionVariant instruction;
-  static constexpr const char *node_name = "Node_Instruction";
-
-  template <typename T>
-    requires std::constructible_from<InstructionVariant, T &&>
-  Instruction(T &&instruction) : instruction{std::forward<T>(instruction)} {}
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     std::visit(
@@ -114,11 +96,8 @@ struct Instruction : public AstNode<Instruction> {
 };
 
 struct InstructionList : public AstNode<InstructionList> {
-  std::vector<Instruction> instructions;
   static constexpr const char *node_name = "Node_InstructionList";
-
-  InstructionList(std::vector<Instruction> &&instructions)
-      : instructions(instructions) {}
+  std::vector<Instruction> instructions;
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "InstructionCount: ", instructions.size());
@@ -132,12 +111,9 @@ struct InstructionList : public AstNode<InstructionList> {
 using CodeBlock = InstructionList;
 
 struct FunctionParameter : public AstNode<FunctionParameter> {
+  static constexpr const char *node_name = "Node_FunctionParameter";
   Type type;
   std::string_view name;
-  static constexpr const char *node_name = "Node_FunctionParameter";
-
-  FunctionParameter(std::string_view &&name, Type &&type)
-      : type{type}, name{name} {}
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "Type: ", type.fullName(), " ; Name: ", name);
@@ -145,11 +121,9 @@ struct FunctionParameter : public AstNode<FunctionParameter> {
 };
 
 struct Attribute : public AstNode<Attribute> {
+  static constexpr const char *node_name = "Node_Class_Attribute";
   Type type;
   std::string_view name;
-  static constexpr const char *node_name = "Node_Class_Attribute";
-
-  Attribute(std::string_view &&name, Type &&type) : type{type}, name{name} {}
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "Type: ", type.fullName(), " ; Name: ", name);
@@ -157,11 +131,8 @@ struct Attribute : public AstNode<Attribute> {
 };
 
 struct FunctionParameterList : public AstNode<FunctionParameterList> {
-  std::vector<FunctionParameter> parameters;
   static constexpr const char *node_name = "Node_FunctionParameterList";
-
-  FunctionParameterList(std::vector<FunctionParameter> &&parameters)
-      : parameters{parameters} {}
+  std::vector<FunctionParameter> parameters;
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "ParameterCount: ", parameters.size());
@@ -173,16 +144,11 @@ struct FunctionParameterList : public AstNode<FunctionParameterList> {
 };
 
 struct Function : public AstNode<Function> {
+  static constexpr const char *node_name = "Node_Function";
   Type returnType;
   std::string_view name;
   FunctionParameterList parametersNode;
   CodeBlock body;
-  static constexpr const char *node_name = "Node_Function";
-
-  Function(CodeBlock &&body, FunctionParameterList &&parametersNode,
-           std::string_view &&name, Type &&returnType)
-      : returnType{returnType}, name{name}, parametersNode{parametersNode},
-        body{body} {}
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "ReturnType: ", returnType.fullName(),
@@ -197,16 +163,11 @@ struct Function : public AstNode<Function> {
 };
 
 struct Method : public AstNode<Method> {
+  static constexpr const char *node_name = "Node_Class_Method";
   Type returnType;
   std::string_view name;
   FunctionParameterList parametersNode;
   CodeBlock body;
-  static constexpr const char *node_name = "Node_Class_Method";
-
-  Method(CodeBlock &&body, FunctionParameterList &&parametersNode,
-         std::string_view &&name, Type &&returnType)
-      : returnType{returnType}, name{name}, parametersNode{parametersNode},
-        body{body} {}
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "ReturnType: ", returnType.fullName(),
@@ -221,10 +182,8 @@ struct Method : public AstNode<Method> {
 };
 
 struct AccessSpecifier : public AstNode<AccessSpecifier> {
-  LevelSpecifier level;
   static constexpr const char *node_name = "Node_AccessSpecifier";
-
-  AccessSpecifier(LevelSpecifier &&level) : level{level} {}
+  LevelSpecifier level;
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     switch (level) {
@@ -242,10 +201,10 @@ struct AccessSpecifier : public AstNode<AccessSpecifier> {
 };
 
 struct Class : public AstNode<Class> {
+  static constexpr const char *node_name = "Node_Class";
   std::string_view name;
   std::vector<std::pair<Attribute, AccessSpecifier>> attributes;
   std::vector<std::pair<Method, AccessSpecifier>> methods;
-  static constexpr const char *node_name = "Node_Class";
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "Name: ", name,
@@ -262,13 +221,9 @@ struct Class : public AstNode<Class> {
 };
 
 struct TranslationUnit : public AstNode<TranslationUnit> {
+  static constexpr const char *node_name = "Node_TranslationUnit";
   std::vector<Function> functions;
   std::vector<Class> classes;
-  static constexpr const char *node_name = "Node_TranslationUnit";
-
-  TranslationUnit(std::vector<Function> &&functions,
-                  std::vector<Class> &&classes)
-      : functions{std::move(functions)}, classes{std::move(classes)} {}
 
   inline void debugEvaluate(DebugEvaluator &evaluator) const {
     evaluator.logNode(*this, "Function count: ", functions.size());

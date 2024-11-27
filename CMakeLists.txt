@@ -25,7 +25,9 @@ set(MAIN_PROGRAM_SOURCES
 project(MyCppCompiler VERSION 0.1 LANGUAGES CXX)
 
 add_executable(${CMAKE_PROJECT_NAME} ${MAIN_PROGRAM_SOURCES})
-target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+# We removed the warning missing-field-initializers because a bug is present for empty structs before gcc 14 (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=110064)
+target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE 
+    -Wall -Wextra -Wpedantic -Werror -Wno-missing-field-initializers)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${SRC_DIR})
 
 find_library(BACKTRACE_LIBRARY NAMES backtrace PATHS /usr/local/lib NO_DEFAULT_PATH)
