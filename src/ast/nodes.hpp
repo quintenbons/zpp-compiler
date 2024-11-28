@@ -11,6 +11,7 @@
 
 #include "ast/DebugEvaluator.hpp"
 #include "ast/DecoratorEvaluator.ipp"
+#include "ast/CodeGeneratorEvaluator.ipp"
 #include "ast/scopes/registers.hpp"
 #include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
@@ -18,9 +19,6 @@
 #include <type_traits>
 
 namespace ast {
-
-static constexpr char ENDL = '\n';
-static constexpr char INDENT = '\t';
 
 enum class LevelSpecifier { Public, Protected, Private };
 
@@ -37,6 +35,10 @@ template <typename NodeType> struct AstNode {
   }
 
   inline void decorate(DecoratorEvaluator &_evaluator) {
+    static_cast<NodeType *>(this)->decorate(_evaluator);
+  }
+
+  inline void generate(CodeGeneratorEvaluator &_evaluator) {
     static_cast<NodeType *>(this)->decorate(_evaluator);
   }
 
@@ -76,9 +78,9 @@ struct NumberLiteral : public AstNode<NumberLiteral> {
     _evaluator.logNode(*this, number);
   }
 
-  void loadValueInRegister(::std::ostream &ss,
+  void loadValueInRegister(CodeGeneratorEvaluator &_evaluator,
                            scopes::Register targetRegister) {
-    ss << "  mov " << scopes::regToStr(targetRegister) << ", " << number
+    _evaluator << "  mov " << scopes::regToStr(targetRegister) << ", " << number
        << ENDL;
   }
 };
@@ -109,13 +111,13 @@ struct ReturnStatement : public AstNode<ReturnStatement> {
   static constexpr const char *node_name = "Node_ReturnStatement";
   ::std::unique_ptr<Expression> expression;
 
-  void genCode(::std::ostream &ss) const {
+  void generate(CodeGeneratorEvaluator &_evaluator) const {
     ::std::visit(
-        [&ss](auto &&expr) {
-          expr.loadValueInRegister(ss, scopes::returnRegister);
+        [&_evaluator](auto &&expr) {
+          expr.loadValueInRegister(_evaluator, scopes::returnRegister);
         },
         (*expression).instruction);
-    ss << "  ret" << ENDL;
+    _evaluator << "  ret" << ENDL;
   }
 
   inline void debug(DebugEvaluator &_evaluator) const {
@@ -138,21 +140,21 @@ struct InlineAsmStatement : public AstNode<InlineAsmStatement> {
   StringLiteral asmBlock;
   ::std::vector<BindingRequest> requests;
 
-  void genCode(::std::ostream &ss) const {
-    ss << ";-- START -- asm binding requests" << ENDL;
+  void generate(CodeGeneratorEvaluator &_evaluator) const {
+    _evaluator << ";-- START -- asm binding requests" << ENDL;
     // TODO: not assume that every variable is always in rdx
 
     for (auto &request : requests) {
       LOG("generating code for request " << request.registerTo);
-      ss << INDENT
+      _evaluator << INDENT
          << ::std::format("mov {}, {}", regToStr(request.registerTo),
                           regToStr(Register::REG_RAX))
          << ENDL;
     }
 
-    ss << ";-- START -- user defined" << ENDL;
-    ss << asmBlock.content << ENDL;
-    ss << ";-- END -- user defined" << ENDL;
+    _evaluator << ";-- START -- user defined" << ENDL;
+    _evaluator << asmBlock.content << ENDL;
+    _evaluator << ";-- END -- user defined" << ENDL;
   }
 
   inline void debug(DebugEvaluator &_evaluator) const {
@@ -241,14 +243,13 @@ struct Function : public AstNode<Function> {
   FunctionParameterList parametersNode;
   CodeBlock body;
 
-  void genCode(::std::ostream &ss) const {
-    ::std::stringstream asmCode;
-    ss << ENDL;
-    ss << name << ":" << ENDL;
+  void generate(CodeGeneratorEvaluator &_evaluator) const {
+    _evaluator << ENDL;
+    _evaluator << name << ":" << ENDL;
     for (auto &instructionNode : body.instructions) {
-      ::std::visit([&](auto &&instr) { instr.genCode(ss); }, instructionNode.instruction);
+      ::std::visit([&](auto &&instr) { instr.generate(_evaluator); }, instructionNode.instruction);
     }
-    ss << INDENT << "ret" << ENDL;
+    _evaluator << INDENT << "ret" << ENDL;
   };
 
   inline void debug(DebugEvaluator &_evaluator) const {
@@ -329,42 +330,19 @@ struct TranslationUnit : public AstNode<TranslationUnit> {
   inline bool isDecorated() const { return true; }
 
   inline ::std::string genAsm_x86_64() const {
-    ::std::stringstream asmCode;
-
-    asmCode << "section .data" << ENDL;
-
-    asmCode << ENDL;
-    asmCode << "section .rodata" << ENDL;
-
-    asmCode << ENDL;
-    asmCode << "section .bss" << ENDL;
-
-    asmCode << ENDL;
-    asmCode << "section .text" << ENDL;
-    asmCode << INDENT << "global _start" << ENDL;
-    // asmCode << INDENT << "global print:function" << ENDL; // when generating stdlibc
-
-    asmCode << ENDL;
-    asmCode << "_start:" << ENDL;
-    asmCode << INDENT << "call main" << ENDL;
-    asmCode << INDENT
-            << "mov rax, 60                  ; Syscall number for exit (60)"
-            << ENDL;
-    asmCode << INDENT
-            << "mov rdi, rbx                 ; Exit code (0) expects return of "
-               "main to be put in rbx for now"
-            << ENDL;
-    asmCode << INDENT << "syscall                      ; Make the syscall"
-            << ENDL;
-
+    CodeGeneratorEvaluator evaluator;
+   
     for (auto &func : functions) {
-      func.genCode(asmCode);
+      func.generate(evaluator);
     }
 
     for (auto &classNode : classes) {
       (void)classNode;
       TODO("Implement classNodes");
     }
+
+    ::std::stringstream asmCode;
+    evaluator.generateAsmCode(asmCode);
 
     return asmCode.str();
   }
