@@ -16,14 +16,14 @@ int main(int argc, char** argv)
   }
 
   auto translationUnitHandle = core::TranslationUnitHandle(args[1]);
-  // ast::evaluate<ast::MockEvaluator>([]() { return ast::MockEvaluator(); }, translationUnit);
-  ast::DebugEvaluator()(*translationUnitHandle.getOrCreateTranslationUnit());
+  
+  translationUnitHandle.debug();
   LOG("");
   LOG("== Decorating");
   translationUnitHandle.decorate();
   LOG("");
   LOG("== Done decorating");
-  ast::DebugEvaluator()(*translationUnitHandle.getOrCreateTranslationUnit());
+  translationUnitHandle.debug();
   LOG("");
   LOG("== Generating code");
   std::string generatedAsm = codegen::generateAsm(*translationUnitHandle.getOrCreateTranslationUnit());
