@@ -291,10 +291,10 @@ public:
   {}
 
   void genAsm_x86_64(CodeGeneratorEvaluator &_evaluator) const {
-    _evaluator << ENDL;
-    _evaluator << name << ":" << ENDL;
+    _evaluator.functionSetGlobal(name);
+    _evaluator.functionDeclare(name);
     body.genAsm_x86_64(_evaluator);
-    _evaluator << INDENT << "ret" << ENDL;
+    _evaluator.functionReturnEmpty();
   };
 
   inline void debug(size_t depth) const {

@@ -13,40 +13,47 @@ static constexpr char INDENT = '\t';
 
 class CodeGeneratorEvaluator
 {
+  bool containsMain = false;
+
   ::std::stringstream dataSection;
   ::std::stringstream RODataSection;
   ::std::stringstream bssSection;
-  ::std::stringstream textSection;
+  struct TextSection {
+    ::std::stringstream sectionTitle;
+    ::std::stringstream globalDeclarations;
+    ::std::stringstream body;
+  };
+
+  TextSection textSection;
 
   void startDataSection() {
-    dataSection << "section .data" << ENDL << ENDL;
+    dataSection << "section .data" << ENDL;
   }
 
   void startRODataSection() {
-    RODataSection << "section .rodata" << ENDL << ENDL;
+    RODataSection << "section .rodata" << ENDL;
   }
 
   void startBSSSection() {
-    bssSection << "section .bss" << ENDL << ENDL;
+    bssSection << "section .bss" << ENDL;
   }
 
   void startTextSection() {
-    textSection << "section .text" << ENDL;
+    textSection.sectionTitle << "section .text" << ENDL;
+  }
 
-    textSection << INDENT << "global _start" << ENDL;
-    // asmCode << INDENT << "global print:function" << ENDL; // when generating stdlibc
-
-    textSection << ENDL;
-    textSection << "_start:" << ENDL;
-    textSection << INDENT << "call main" << ENDL;
-    textSection << INDENT
+  void generateStartFunction() {
+    functionSetGlobal("_start");
+    textSection.body << "_start:" << ENDL;
+    textSection.body << INDENT << "call main" << ENDL;
+    textSection.body << INDENT
             << "mov rax, 60                  ; Syscall number for exit (60)"
             << ENDL;
-    textSection << INDENT
+    textSection.body << INDENT
             << "mov rdi, rbx                 ; Exit code (0) expects return of "
                "main to be put in rbx for now"
             << ENDL;
-    textSection << INDENT << "syscall                      ; Make the syscall"
+    textSection.body << INDENT << "syscall                      ; Make the syscall"
             << ENDL;
   }
 
@@ -60,15 +67,40 @@ public:
 
   template <typename T>
   CodeGeneratorEvaluator& operator<<(const T& value) {
-    textSection << value;
+    textSection.body << value;
     return *this;
   }
 
+  void functionSetGlobal(const ::std::string_view &name) {
+    textSection.globalDeclarations << INDENT << "global " << name << ENDL;
+  }
+
+  void functionDeclare(const ::std::string_view &name) {
+    if (!containsMain) {
+      containsMain = name == "main";
+    }
+
+    textSection.body << name << ":" << ENDL;
+  }
+
+  void functionReturnEmpty() {
+    textSection.body << INDENT << "ret" << ENDL << ENDL;
+  }
+
   void generateAsmCode(::std::stringstream &asmCode) {
+    if (containsMain)
+      generateStartFunction();
+
     asmCode << dataSection.str();
+    asmCode << ENDL;
     asmCode << RODataSection.str();
+    asmCode << ENDL;
     asmCode << bssSection.str();
-    asmCode << textSection.str();
+    asmCode << ENDL;
+    asmCode << textSection.sectionTitle.str();
+    asmCode << textSection.globalDeclarations.str();
+    asmCode << ENDL;
+    asmCode << textSection.body.str();
   }
 };
 
