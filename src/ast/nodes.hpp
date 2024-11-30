@@ -90,7 +90,7 @@ private:
   std::string content;
 };
 
-struct Expression : public interface::AstNode<Expression> {
+class Expression : public interface::AstNode<Expression> {
 public:
   static constexpr const char *node_name = "Node_Expression";
   using ExpressionVariant = std::variant<
@@ -113,7 +113,7 @@ private:
   ExpressionVariant expr;
 };
 
-struct ReturnStatement : public interface::AstNode<ReturnStatement> {
+class ReturnStatement : public interface::AstNode<ReturnStatement> {
 public:
   static constexpr const char *node_name = "Node_ReturnStatement";
 
@@ -134,7 +134,7 @@ private:
   Expression expression;
 };
 
-struct InlineAsmStatement : public interface::AstNode<InlineAsmStatement> {
+class InlineAsmStatement : public interface::AstNode<InlineAsmStatement> {
 public:
   static constexpr const char *node_name = "Node_InlineAsmStatement";
   using Register = scopes::Register;
@@ -179,7 +179,7 @@ private:
   std::vector<BindingRequest> requests;
 };
 
-struct Instruction : public interface::AstNode<Instruction> {
+class Instruction : public interface::AstNode<Instruction> {
 public:
   static constexpr const char *node_name = "Node_Instruction";
   using InstructionVariant = std::variant<
@@ -205,7 +205,7 @@ private:
   InstructionVariant instr;
 };
 
-struct InstructionList : public interface::AstNode<InstructionList> {
+class InstructionList : public interface::AstNode<InstructionList> {
 public:
   static constexpr const char *node_name = "Node_InstructionList";
 
@@ -229,7 +229,7 @@ private:
   std::vector<Instruction> instructions;
 };
 
-struct FunctionParameter : public interface::AstNode<FunctionParameter> {
+class FunctionParameter : public interface::AstNode<FunctionParameter> {
 public:
   static constexpr const char *node_name = "Node_FunctionParameter";
 
@@ -245,7 +245,7 @@ private:
   std::string_view name;
 };
 
-struct Attribute : public interface::AstNode<Attribute> {
+class Attribute : public interface::AstNode<Attribute> {
 public:
   static constexpr const char *node_name = "Node_ClassAttribute";
 
@@ -261,7 +261,7 @@ private:
   std::string_view name;
 };
 
-struct FunctionParameterList : public interface::AstNode<FunctionParameterList> {
+class FunctionParameterList : public interface::AstNode<FunctionParameterList> {
 public:
   static constexpr const char *node_name = "Node_FunctionParameterList";
 
@@ -281,7 +281,7 @@ private:
   std::vector<FunctionParameter> parameters;
 };
 
-struct Function : public interface::AstNode<Function> {
+class Function : public interface::AstNode<Function> {
 public:
   static constexpr const char *node_name = "Node_Function";
 
@@ -311,7 +311,7 @@ private:
   InstructionList body;
 };
 
-struct Method : public interface::AstNode<Method> {
+class Method : public interface::AstNode<Method> {
 public:
   static constexpr const char *node_name = "Node_ClassMethod";
 
@@ -334,7 +334,7 @@ private:
   InstructionList body;
 };
 
-struct AccessSpecifier : public interface::AstNode<AccessSpecifier> {
+class AccessSpecifier : public interface::AstNode<AccessSpecifier> {
 public:
   static constexpr const char *node_name = "Node_AccessSpecifier";
 
@@ -363,7 +363,7 @@ private:
   Visibility level;
 };
 
-struct Class : public interface::AstNode<Class> {
+class Class : public interface::AstNode<Class> {
 public:
   static constexpr const char *node_name = "Node_Class";
   using AttributeList = std::vector<std::pair<Attribute, AccessSpecifier>>;
@@ -396,7 +396,7 @@ private:
   MethodList methods;
 };
 
-struct TranslationUnit : public interface::AstNode<TranslationUnit> {
+class TranslationUnit : public interface::AstNode<TranslationUnit> {
 public:
   static constexpr const char *node_name = "Node_TranslationUnit";
 
