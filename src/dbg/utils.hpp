@@ -22,17 +22,17 @@ template<typename T>
 inline constexpr bool is_variant_v=is_variant<T>::value;
 
 template<typename T>
-T readNumber(std::string_view str) {
-    T value = 0;
-    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
+static inline T readNumber(std::string_view str) {
+  T value = 0;
+  auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
 
-    if (ec == std::errc::invalid_argument) {
-        std::cerr << "Invalid argument: unable to convert to number" << std::endl;
-    } else if (ec == std::errc::result_out_of_range) {
-        std::cerr << "Out of range: number is too large" << std::endl;
-    }
+  if (ec == std::errc::invalid_argument) {
+    std::cerr << "Invalid argument: unable to convert to number" << std::endl;
+  } else if (ec == std::errc::result_out_of_range) {
+    std::cerr << "Out of range: number is too large" << std::endl;
+  }
 
-    return value;
+  return value;
 }
 
 }

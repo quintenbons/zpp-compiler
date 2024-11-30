@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/filesystem.hpp>
+
 #include "ast/nodes.hpp"
 #include "codegen/generate.hpp"
 #include "dbg/errors.hpp"
@@ -11,10 +13,10 @@ namespace core
 class TranslationUnitHandle
 {
 public:
-  TranslationUnitHandle(const char *filename)
+  TranslationUnitHandle(const boost::filesystem::path &filename)
   {
     std::ifstream inputFile(filename);
-    DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
+    DEBUG_ASSERT(inputFile.is_open(), "Could not open input file " << filename);
     _parser = std::make_unique<parser::Parser>(std::move(inputFile));
   }
 
@@ -30,6 +32,11 @@ public:
     getOrCreateTranslationUnit().debug(0);
   }
 
+  void debugScopeStack()
+  {
+    _scopeStack->logDebug();
+  }
+
   void decorate()
   {
     if (_scopeStack) return;
@@ -37,7 +44,6 @@ public:
     parseIfNeeded();
     _scopeStack = std::make_unique<scopes::ScopeStack>();
     getOrCreateTranslationUnit().decorate(*_scopeStack, _scopeStack->rootScope());
-    _scopeStack->logDebug();
   }
 
   std::string genAsm_x86_64()
