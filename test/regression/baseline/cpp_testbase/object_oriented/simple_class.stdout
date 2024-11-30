@@ -1,3 +1,6 @@
+== Parsing
+
+== Done parsing
 [35m[Node_TranslationUnit] Function count: 0
 [0m[35m[Node_TranslationUnit] Class count: 1
 [0m[35m  [Node_Class] Name: SimpleClass ; Members: 2
@@ -36,7 +39,7 @@
 [0m[35m  [Node_AccessSpecifier] Visibility: Private
 [0m
 == Generating code
-TODO Implement classNodes 0# ast::TranslationUnit::genAsm_x86_64[abi:cxx11]() const in z++
+TODO Implement classNodes 0# ast::TranslationUnit::genAsm_x86_64[abi:cxx11](codegen::NasmGenerator_x86_64&) const in z++
  1# main in z++
  2# __libc_start_call_main at ../sysdeps/nptl/libc_start_call_main.h:58
  3# __libc_start_main at ../csu/libc-start.c:379

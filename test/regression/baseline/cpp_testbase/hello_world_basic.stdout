@@ -1,3 +1,6 @@
+== Parsing
+
+== Done parsing
 [Line: 0, Offset: 8] Build failed: Unexpected token type=[TT_DOUBLE_QUOTE] for value=["] expected=[TT_IDENT]
 extern "C" void write(int, const char*, int);
        ^
