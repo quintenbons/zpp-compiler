@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_COMPILER g++-13)
 
 # set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 set(SRC_DIR "src")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -22,6 +23,8 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/ast/scopes/memory_x86_64.hpp
   ${SRC_DIR}/ast/scopes/registers.hpp
 
+  ${SRC_DIR}/interface/AstNode.hpp
+
   ${SRC_DIR}/codegen/generate.hpp
 
   ${SRC_DIR}/dbg/errors.hpp
@@ -29,9 +32,6 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/dbg/utils.hpp
 
   ${SRC_DIR}/core/TranslationUnitHandle.hpp
-
-  ${SRC_DIR}/ast/DebugEvaluator.hpp
-  ${SRC_DIR}/ast/DecoratorEvaluator.ipp
 )
 
 set(COMPILER_NAME z++)

@@ -4,7 +4,6 @@
 
 #include "codegen/generate.hpp"
 #include "core/TranslationUnitHandle.hpp"
-#include "ast/DebugEvaluator.hpp"
 
 int main(int argc, char** argv)
 {
@@ -16,7 +15,7 @@ int main(int argc, char** argv)
   }
 
   auto translationUnitHandle = core::TranslationUnitHandle(args[1]);
-  
+
   translationUnitHandle.debug();
   LOG("");
   LOG("== Decorating");

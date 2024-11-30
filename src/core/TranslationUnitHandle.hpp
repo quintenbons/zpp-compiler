@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ast/nodes.hpp"
-#include "ast/DecoratorEvaluator.ipp"
 #include "lexing_parsing/parser.ipp"
 
 namespace core
@@ -11,7 +10,6 @@ class TranslationUnitHandle
 {
 public:
   TranslationUnitHandle(const char *filename)
-  : _filename{filename}
   {
     std::ifstream inputFile(filename);
     DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
@@ -26,8 +24,7 @@ public:
 
   void debug()
   {
-    ast::DebugEvaluator debugEvaluator;
-    getOrCreateTranslationUnit()->debug(debugEvaluator);
+    getOrCreateTranslationUnit()->debug(0);
   }
 
   void decorate()
@@ -36,8 +33,7 @@ public:
 
     parseIfNeeded();
     _scopeStack = std::make_unique<scopes::ScopeStack>();
-    ast::DecoratorEvaluator decoratorEvaluator(*_scopeStack);
-    getOrCreateTranslationUnit()->decorate(decoratorEvaluator);
+    getOrCreateTranslationUnit()->decorate(*_scopeStack, _scopeStack->rootScope());
     _scopeStack->logDebug();
   }
 
@@ -51,7 +47,6 @@ private:
   }
 
 private:
-  const char *_filename;
   std::unique_ptr<parser::Parser> _parser;
   std::unique_ptr<ast::TranslationUnit> _translationUnit;
   std::unique_ptr<scopes::ScopeStack> _scopeStack;

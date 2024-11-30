@@ -27,6 +27,8 @@ zpp_run_nasm          assemble, link and execute .asm files
 
 zpp_test_cpp          run regression tests on c++ test base
 zpp_test_cpp_debug    run regression tests on c++ test base with more verbose output
+zpp_regression_diff   shows which files changed (dumps vimdiff command)
+zpp_regression_sync   syncs baseline based on current result
 zpp_test_asm          run assembly tests
 """
 }
@@ -90,6 +92,14 @@ zpp_test_cpp() {
 
 zpp_test_cpp_debug() {
   zpp_test_cpp --log-cli-level=debug -v $@
+}
+
+zpp_regression_diff() {
+  diff -q -r $ZPP_REPO_PATH/test/regression/baseline/ $ZPP_REPO_PATH/test/regression/results/ | awk '{print "vimdiff " $2 " " $4}'
+}
+
+zpp_regression_sync() {
+  rsync -a $ZPP_REPO_PATH/test/regression/results/ $ZPP_REPO_PATH/test/regression/baseline
 }
 
 zpp_test_asm() {

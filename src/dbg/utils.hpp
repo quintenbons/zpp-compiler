@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <charconv>
 #include <type_traits>
 #include <variant>
@@ -10,6 +11,7 @@ namespace utils
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
+#define INDENT_D(depth) std::string(depth * 2, ' ')
 
 template<typename T> struct is_variant : std::false_type {};
 
