@@ -1,29 +1,26 @@
-#include <cstdlib>
 #include <iostream>
+#include <vector>
 #include <cassert>
 
-#include "codegen/assemble.hpp"
-#include "codegen/linking.hpp"
 #include "core/TranslationUnitHandle.hpp"
-#include "dbg/argparse.hpp"
-#include "dbg/errors.hpp"
-#include "dbg/iohelper.hpp"
 
-static inline int fullDebugExec(argparse::CompilerOptions &options) {
-  utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-  utils::SafeOFStream asmFile("./a.asm");
-  utils::SafeOFStream objFile("./a.o");
-  utils::SafeOFStream outputFile("./a.out");
+int main(int argc, char** argv)
+{
+  std::vector<const char*> args(argv, argv+argc);
+
+  if (args.size() != 2) {
+    std::cerr << "Usage: " << args[0] << " [inputfile]" << std::endl;
+    return 1;
+  }
 
   LOG("== Parsing");
-  auto translationUnitHandle = core::TranslationUnitHandle(inputFile.path());
+  auto translationUnitHandle = core::TranslationUnitHandle(args[1]);
   LOG("");
   LOG("== Done parsing");
   translationUnitHandle.debug();
   LOG("");
   LOG("== Decorating");
   translationUnitHandle.decorate();
-  translationUnitHandle.debugScopeStack();
   LOG("");
   LOG("== Done decorating");
   translationUnitHandle.debug();
@@ -32,62 +29,21 @@ static inline int fullDebugExec(argparse::CompilerOptions &options) {
   std::string generatedAsm = translationUnitHandle.genAsm_x86_64();
   LOG("== Generated asm to a.asm:");
   std::cout << generatedAsm;
-  asmFile.writeAndClose(generatedAsm);
+  std::ofstream("./a.asm", std::ios_base::out) << generatedAsm;
 
   LOG("== Generated .o as a.o:");
-  assemble::runNasmSafe(asmFile.path(), objFile.path());
+  int nasmResult = std::system("nasm -f elf64 ./a.asm -o ./a.o");
+  if (nasmResult != 0) {
+    std::cerr << "Error: nasm command failed with exit code " << nasmResult
+              << std::endl;
+    return nasmResult;
+  }
 
   LOG("== Generating exe as a.out:");
-  linking::runLdSafe(objFile.path(), outputFile.path());
-
-  return 0;
-}
-
-int main(int argc, char** argv)
-{
-  auto options = argparse::ArgParser(argc, argv).parse();
-
-  if (options.fullDebugExec) {
-    fullDebugExec(options);
-  }
-
-  else if (options.preprocessOnly) {
-    TODO("Preprocessing not yet implemented");
-  }
-
-  // redundancy here is acceptable to make sure io errors happen sooner rather than later
-  else if (options.compileOnly) {
-    utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-    utils::SafeOFStream outputFile(options.outputFile);
-
-    auto tu = core::TranslationUnitHandle(inputFile.path());
-    tu.decorate();
-    outputFile << tu.genAsm_x86_64();
-  }
-
-  else if (options.compileAndAssemble) {
-    utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-    utils::TempOFStream asmFile("asm");
-    utils::SafeOFStream outputFile(options.outputFile);
-
-    auto tu = core::TranslationUnitHandle(inputFile.path());
-    tu.decorate();
-    asmFile.writeAndClose(tu.genAsm_x86_64());
-
-    assemble::runNasmSafe(asmFile.path(), outputFile.path());
-  }
-
-  else {
-    utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-    utils::TempOFStream asmFile("asm");
-    utils::TempOFStream objectFile("o");
-    utils::DryRunSafeIFStream outputFile(options.outputFile);
-
-    auto tu = core::TranslationUnitHandle(options.inputFiles.at(0));
-    tu.decorate();
-    asmFile.writeAndClose(tu.genAsm_x86_64());
-
-    assemble::runNasmSafe(asmFile.path(), objectFile.path());
-    linking::runLdSafe(objectFile.path(), outputFile.path());
+  int ldResult = std::system("ld ./a.o -o ./a.out");
+  if (ldResult != 0) {
+    std::cerr << "Error: ld command failed with exit code " << ldResult
+              << std::endl;
+    return ldResult;
   }
 }

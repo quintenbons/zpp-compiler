@@ -1,43 +1,15 @@
 #pragma once
 
 #include <boost/stacktrace.hpp>
-#include <sstream>
 
 #include "logger.hpp"
 
-enum ExitCode: int {
-// Public codes
-  EXIT_OK=0,
-  EXIT_HELP=0,
-  EXIT_USER_THROW=1,
-  EXIT_INVALID_ARGUMENTS=2,
-  EXIT_UNSUPPORTED=3,
-  EXIT_IO_ERROR=4,
-  EXIT_NASM_FAILURE=5,
-
-// Unexpected codes
-  EXIT_THROW=128,
-  EXIT_DEBUG_THROW=129,
-};
-
-#define SILENT_THROW_CODE(msg, code)                                           \
-  do {                                                                         \
-    LOG_ERROR(msg);                                                            \
-    std::exit(code);                                                           \
-  } while (0)
-
-#define THROW_CODE(msg, code)                                                  \
-  do {                                                                         \
-    LOG_ERROR(msg);                                                            \
-    LOG_ERROR(boost::stacktrace::to_string(boost::stacktrace::stacktrace()));  \
-    std::exit(code);                                                           \
-  } while (0)
-
-#define THROW(msg)                                                             \
-  do {                                                                         \
-    LOG_ERROR(msg);                                                            \
-    LOG_ERROR(boost::stacktrace::to_string(boost::stacktrace::stacktrace()));  \
-    std::exit(EXIT_THROW);                                                     \
+#define THROW(msg)                              \
+  do                                            \
+  {                                             \
+    LOG_ERROR(msg);                             \
+    LOG_ERROR(boost::stacktrace::stacktrace()); \
+    ::std::exit(1);                               \
   } while (0)
 
 #define DEBUG_ASSERT(cond, ...)                                      \
@@ -53,7 +25,7 @@ enum ExitCode: int {
         ss << ": " << __VA_ARGS__;                                   \
       }                                                              \
       LOG_ERROR(ss.str());                                           \
-      std::exit(EXIT_DEBUG_THROW);                                   \
+      std::exit(1);                                                  \
     }                                                                \
   } while (0)
 
@@ -70,7 +42,7 @@ enum ExitCode: int {
                << std::string(pos.lineOffset - 1, ' ');                        \
                ss << "^";)                                                     \
     LOG_ERROR(ss.str());                                                       \
-    std::exit(EXIT_USER_THROW);                                                \
+    std::exit(1);                                                              \
   } while (0)
 
 #define USER_ASSERT(cond, msg, ...) \
@@ -82,11 +54,4 @@ enum ExitCode: int {
     }                               \
   } while (0)
 
-#define CUSTOM_ASSERT(cond, msg, code)                                         \
-  do {                                                                         \
-    if (!(cond)) {                                                             \
-      SILENT_THROW_CODE(msg, code);                                            \
-    }                                                                          \
-  } while (0)
-
-#define TODO(msg) THROW_CODE("TODO " << msg, EXIT_UNSUPPORTED)
+#define TODO(msg) THROW("TODO " << msg)
