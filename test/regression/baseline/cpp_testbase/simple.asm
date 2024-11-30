@@ -14,6 +14,6 @@ _start:
 	syscall                      ; Make the syscall
 
 main:
-  mov rbx, 1
-  ret
+	mov rbx, 1
+	ret
 	ret

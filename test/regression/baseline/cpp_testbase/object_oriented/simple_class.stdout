@@ -1,21 +1,20 @@
 [35m[Node_TranslationUnit] Function count: 0
 [0m[35m[Node_TranslationUnit] Class count: 1
 [0m[35m  [Node_Class] Name: SimpleClass ; Members: 2
-[0m[35m  [Node_ClassLevelSpecifier] LevelSpecifier: Private
+[0m[35m  [Node_AccessSpecifier] Visibility: Public
 [0m[35m    [Node_ClassAttribute] Type: int ; Name: attribute
-[0m[35m    [Node_Function] ReturnType: int ; Name: method ; ParamCount: 1
+[0m[35m    [Node_ClassMethod] ReturnType: int ; Name: method ; ParamCount: 1
 [0m[35m      [Node_Type] int
-[0m[35m      [Node_FunctionParameter] ParameterCount: 1
+[0m[35m      [Node_FunctionParameterList] ParameterCount: 1
 [0m[35m        [Node_FunctionParameter] Type: int ; Name: a
 [0m[35m      [Node_InstructionList] InstructionCount: 1
 [0m[35m        [Node_ReturnStatement] 
-[0m[35m          [Node_NumberLiteral] 0
-[0m[35m  [Node_ClassLevelSpecifier] LevelSpecifier: Public
-[0m[35m  [Node_ClassLevelSpecifier] LevelSpecifier: Protected
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m  [Node_AccessSpecifier] Visibility: Protected
+[0m[35m  [Node_AccessSpecifier] Visibility: Private
 [0m
 == Decorating
-[35m[Node_TranslationUnit] Function count: 0
-[0m[35mScopeStack of 1 scopes
+[35mScopeStack of 1 scopes
 [0m[35m[Scope] id=0 ; parent=0
   [Type] id=1 ; name=int ; size=32
   [Type] id=0 ; name=void ; size=0
@@ -24,17 +23,17 @@
 [35m[Node_TranslationUnit] Function count: 0
 [0m[35m[Node_TranslationUnit] Class count: 1
 [0m[35m  [Node_Class] Name: SimpleClass ; Members: 2
-[0m[35m  [Node_ClassLevelSpecifier] LevelSpecifier: Private
+[0m[35m  [Node_AccessSpecifier] Visibility: Public
 [0m[35m    [Node_ClassAttribute] Type: int ; Name: attribute
-[0m[35m    [Node_Function] ReturnType: int ; Name: method ; ParamCount: 1
+[0m[35m    [Node_ClassMethod] ReturnType: int ; Name: method ; ParamCount: 1
 [0m[35m      [Node_Type] int
-[0m[35m      [Node_FunctionParameter] ParameterCount: 1
+[0m[35m      [Node_FunctionParameterList] ParameterCount: 1
 [0m[35m        [Node_FunctionParameter] Type: int ; Name: a
 [0m[35m      [Node_InstructionList] InstructionCount: 1
 [0m[35m        [Node_ReturnStatement] 
-[0m[35m          [Node_NumberLiteral] 0
-[0m[35m  [Node_ClassLevelSpecifier] LevelSpecifier: Public
-[0m[35m  [Node_ClassLevelSpecifier] LevelSpecifier: Protected
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m  [Node_AccessSpecifier] Visibility: Protected
+[0m[35m  [Node_AccessSpecifier] Visibility: Private
 [0m
 == Generating code
 TODO Implement classNodes 0# ast::TranslationUnit::genAsm_x86_64[abi:cxx11]() const in z++

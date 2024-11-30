@@ -2,338 +2,416 @@
 
 #include <cstddef>
 #include <format>
-#include <memory>
 #include <ostream>
 #include <sstream>
 #include <string_view>
 #include <variant>
 #include <vector>
+#include <ranges>
 
-#include "ast/DebugEvaluator.hpp"
-#include "ast/DecoratorEvaluator.ipp"
+#include "ast/scopes/scopeStack.hpp"
+#include "dbg/utils.hpp"
+#include "interface/AstNode.hpp"
 #include "ast/CodeGeneratorEvaluator.ipp"
 #include "ast/scopes/registers.hpp"
 #include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
 #include "scopes/types.hpp"
-#include <type_traits>
 
 namespace ast {
 
-enum class LevelSpecifier { Public, Protected, Private };
+enum class Visibility { Public, Protected, Private };
+constexpr Visibility allVisibilities[] = { Visibility::Public, Visibility::Protected, Visibility::Private };
 
-template <typename T>
-concept HasDebugEvaluate = requires(const T &obj, DebugEvaluator &_evaluator) {
-  { obj.debug(_evaluator) } -> ::std::same_as<void>;
-};
-
-template <typename NodeType> struct AstNode {
-  inline void debug(DebugEvaluator &_evaluator) const
-    requires HasDebugEvaluate<NodeType>
-  {
-    static_cast<const NodeType *>(this)->debugEvaluate(_evaluator);
-  }
-
-  inline void decorate(DecoratorEvaluator &_evaluator) {
-    static_cast<NodeType *>(this)->decorate(_evaluator);
-  }
-
-  inline void generate(CodeGeneratorEvaluator &_evaluator) {
-    static_cast<NodeType *>(this)->decorate(_evaluator);
-  }
-
-  inline static const char *getNodeName() { return NodeType::node_name; }
-
-  friend ::std::ostream &operator<<(::std::ostream &os, const AstNode &) {
-    return os << getNodeName();
-  }
-};
-
-struct Type : public AstNode<Type> {
+class Type : public interface::AstNode<Type>
+{
+public:
   static constexpr const char *node_name = "Node_Type";
-  ::std::string_view name;
+
+public:
+  Type(std::string_view name, int pointerDepth): name(name), pointerDepth(pointerDepth) {}
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    (void) scopeStack;
+    description = &scope.findType(name);
+  }
+
+  inline std::string fullName() const {
+    return std::string(name) + std::string(pointerDepth, '*');
+  }
+
+  inline void debug(size_t depth) const {
+    logNode(depth, fullName());
+  }
+
+private:
+  std::string_view name;
   int pointerDepth;
   const scopes::TypeDescription *description{};
-
-  inline void decorate(DecoratorEvaluator &_evaluator) {
-    description = &(_evaluator.getCurrentScope()).findType(name);
-  }
-
-  inline ::std::string fullName() const {
-    return ::std::string(name) + ::std::string(pointerDepth, '*');
-  }
-
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, fullName());
-  }
 };
 
-struct NumberLiteral : public AstNode<NumberLiteral> {
+class NumberLiteral : public interface::AstNode<NumberLiteral>
+{
+public:
   static constexpr const char *node_name = "Node_NumberLiteral";
   using UnderlyingT = uint64_t;
 
+public:
+  NumberLiteral(UnderlyingT number): number(number) {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, number);
+  }
+
+  void loadValueInRegister(CodeGeneratorEvaluator &_evaluator, scopes::Register targetRegister) const {
+    _evaluator << INDENT << "mov " << scopes::regToStr(targetRegister) << ", " << number << ENDL;
+  }
+
+private:
   UnderlyingT number;
-
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, number);
-  }
-
-  void loadValueInRegister(CodeGeneratorEvaluator &_evaluator,
-                           scopes::Register targetRegister) {
-    _evaluator << "  mov " << scopes::regToStr(targetRegister) << ", " << number
-       << ENDL;
-  }
 };
 
-struct StringLiteral : public AstNode<StringLiteral> {
+class StringLiteral : public interface::AstNode<StringLiteral> {
+public:
   static constexpr const char *node_name = "Node_StringLiteral";
-  ::std::string content;
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, content);
-    _evaluator.increaseDepth();
-    LOG_DEBUG(::std::string(_evaluator.getDepth() * 2, ' ') << content);
-    _evaluator.decreaseDepth();
+public:
+  StringLiteral(std::string_view content): content(content) {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, content);
   };
+
+  std::string_view getContent() const {
+    return content;
+  }
+
+private:
+  std::string content;
 };
 
-struct Expression : public AstNode<Expression> {
+struct Expression : public interface::AstNode<Expression> {
+public:
   static constexpr const char *node_name = "Node_Expression";
-  ::std::variant<NumberLiteral> instruction;
+  using ExpressionVariant = std::variant<
+    NumberLiteral
+  >;
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    ::std::visit([&_evaluator](const auto &node) { node.debug(_evaluator); },
-                 instruction);
+public:
+  template<typename T>
+  Expression(T &&expr): expr(std::forward<T>(expr)) {}
+
+  inline void debug(size_t depth) const {
+    std::visit([depth](const auto &node) { node.debug(depth); }, expr);
   }
+
+  void loadValueInRegister(CodeGeneratorEvaluator &_evaluator, scopes::Register targetRegister) const {
+    std::visit( [&_evaluator, targetRegister](auto &&expr) { expr.loadValueInRegister(_evaluator, targetRegister); }, expr);
+  }
+
+private:
+  ExpressionVariant expr;
 };
 
-struct ReturnStatement : public AstNode<ReturnStatement> {
+struct ReturnStatement : public interface::AstNode<ReturnStatement> {
+public:
   static constexpr const char *node_name = "Node_ReturnStatement";
-  ::std::unique_ptr<Expression> expression;
 
-  void generate(CodeGeneratorEvaluator &_evaluator) const {
-    ::std::visit(
-        [&_evaluator](auto &&expr) {
-          expr.loadValueInRegister(_evaluator, scopes::returnRegister);
-        },
-        (*expression).instruction);
-    _evaluator << "  ret" << ENDL;
+public:
+  ReturnStatement(Expression &&expression): expression(std::move(expression)) {}
+
+  void genAsm_x86_64(CodeGeneratorEvaluator &_evaluator) const {
+    expression.loadValueInRegister(_evaluator, scopes::returnRegister);
+    _evaluator << INDENT << "ret" << ENDL;
   }
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this);
-    _evaluator.increaseDepth();
-    expression->debug(_evaluator);
-    _evaluator.decreaseDepth();
+  inline void debug(size_t depth) const {
+    logNode(depth);
+    expression.debug(depth);
   }
+
+private:
+  Expression expression;
 };
 
-struct InlineAsmStatement : public AstNode<InlineAsmStatement> {
+struct InlineAsmStatement : public interface::AstNode<InlineAsmStatement> {
+public:
   static constexpr const char *node_name = "Node_InlineAsmStatement";
   using Register = scopes::Register;
 
   struct BindingRequest {
     scopes::Register registerTo;
-    ::std::string varIdentifier;
+    std::string varIdentifier;
   };
 
-  StringLiteral asmBlock;
-  ::std::vector<BindingRequest> requests;
+public:
+  InlineAsmStatement(StringLiteral &&asmBlock, std::vector<BindingRequest> &&requests)
+  : asmBlock(std::move(asmBlock)), requests(std::move(requests))
+  {}
 
-  void generate(CodeGeneratorEvaluator &_evaluator) const {
+  void genAsm_x86_64(CodeGeneratorEvaluator &_evaluator) const {
     _evaluator << ";-- START -- asm binding requests" << ENDL;
     // TODO: not assume that every variable is always in rdx
 
     for (auto &request : requests) {
       LOG("generating code for request " << request.registerTo);
       _evaluator << INDENT
-         << ::std::format("mov {}, {}", regToStr(request.registerTo),
+         << std::format("mov {}, {}", regToStr(request.registerTo),
                           regToStr(Register::REG_RAX))
          << ENDL;
     }
 
     _evaluator << ";-- START -- user defined" << ENDL;
-    _evaluator << asmBlock.content << ENDL;
+    _evaluator << asmBlock.getContent() << ENDL;
     _evaluator << ";-- END -- user defined" << ENDL;
   }
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this,
-                       "Register binding request count: ", requests.size());
-    _evaluator.increaseDepth();
+  inline void debug(size_t depth) const {
+    logNode(depth, "Register binding request count: ", requests.size());
     for (auto &request : requests) {
-      LOG_DEBUG(::std::string(_evaluator.getDepth() * 2, ' ') << "[Request] " <<
-      request.registerTo << "(" << request.varIdentifier << ")");
-      LOG("Register binding request: " << request.registerTo << " ("
-                                       << request.varIdentifier << ")");
+      LOG_DEBUG(INDENT_D(depth) << "[Request] " << request.registerTo << "(" << request.varIdentifier << ")");
     }
-    asmBlock.debug(_evaluator);
-    _evaluator.decreaseDepth();
+    asmBlock.debug(depth + 1);
   }
+
+private:
+  StringLiteral asmBlock;
+  std::vector<BindingRequest> requests;
 };
 
-struct Instruction : public AstNode<Instruction> {
+struct Instruction : public interface::AstNode<Instruction> {
+public:
   static constexpr const char *node_name = "Node_Instruction";
-  using InstructionVariant = ::std::variant<ReturnStatement,
-                                            InlineAsmStatement
-                                            // Declaration,
-                                            // Definition,
-                                            >;
+  using InstructionVariant = std::variant<
+    ReturnStatement,
+    InlineAsmStatement
+    // Declaration,
+    // Definition,
+  >;
 
-  InstructionVariant instruction;
+public:
+  template<typename T>
+  Instruction(T &&instr): instr(std::forward<T>(instr)) {}
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    ::std::visit([&_evaluator](const auto &node) { node.debug(_evaluator); },
-                 instruction);
+  inline void debug(size_t depth) const {
+    std::visit([depth](const auto &node) { node.debug(depth); }, instr);
   }
+
+  void genAsm_x86_64(CodeGeneratorEvaluator &evaluator) const {
+    std::visit([&evaluator](const auto &node) { node.genAsm_x86_64(evaluator); }, instr);
+  }
+
+private:
+  InstructionVariant instr;
 };
 
-struct InstructionList : public AstNode<InstructionList> {
+struct InstructionList : public interface::AstNode<InstructionList> {
+public:
   static constexpr const char *node_name = "Node_InstructionList";
-  ::std::vector<Instruction> instructions;
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "InstructionCount: ", instructions.size());
-    _evaluator.increaseDepth();
-    for (const auto &instr : instructions)
-      instr.debug(_evaluator);
-    _evaluator.decreaseDepth();
+public:
+  InstructionList(std::vector<Instruction> &&instructions): instructions(std::move(instructions)) {}
+
+  void genAsm_x86_64(CodeGeneratorEvaluator &evaluator) const {
+    for (const auto &instr : instructions) {
+      instr.genAsm_x86_64(evaluator);
+    }
   }
+
+  inline void debug(size_t depth) const {
+    logNode(depth, "InstructionCount: ", instructions.size());
+    for (const auto &instr : instructions) {
+      instr.debug(depth + 1);
+    }
+  }
+
+private:
+  std::vector<Instruction> instructions;
 };
 
-using CodeBlock = InstructionList;
-
-struct FunctionParameter : public AstNode<FunctionParameter> {
+struct FunctionParameter : public interface::AstNode<FunctionParameter> {
+public:
   static constexpr const char *node_name = "Node_FunctionParameter";
-  Type type;
-  ::std::string_view name;
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "Type: ", type.fullName(), " ; Name: ", name);
+public:
+  FunctionParameter(Type &&type, std::string_view name): type(type), name(name) {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
   }
+
+private:
+  Type type;
+  std::string_view name;
 };
 
-struct Attribute : public AstNode<Attribute> {
+struct Attribute : public interface::AstNode<Attribute> {
+public:
   static constexpr const char *node_name = "Node_ClassAttribute";
+
+public:
+  Attribute(Type &&type, std::string_view name): type(type), name(name) {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
+  }
+
+private:
   Type type;
-  ::std::string_view name;
-
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "Type: ", type.fullName(), " ; Name: ", name);
-  }
+  std::string_view name;
 };
 
-struct FunctionParameterList : public AstNode<FunctionParameterList> {
+struct FunctionParameterList : public interface::AstNode<FunctionParameterList> {
+public:
   static constexpr const char *node_name = "Node_FunctionParameterList";
-  ::std::vector<FunctionParameter> parameters;
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "ParameterCount: ", parameters.size());
-    _evaluator.increaseDepth();
-    for (const auto &param : parameters)
-      param.debug(_evaluator);
-    _evaluator.decreaseDepth();
+public:
+  FunctionParameterList(std::vector<FunctionParameter> &&parameters): parameters(parameters) {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, "ParameterCount: ", parameters.size());
+    for (const auto &param : parameters) {
+      param.debug(depth + 1);
+    }
   }
+
+  inline auto size() const { return parameters.size(); }
+
+private:
+  std::vector<FunctionParameter> parameters;
 };
 
-struct Function : public AstNode<Function> {
+struct Function : public interface::AstNode<Function> {
+public:
   static constexpr const char *node_name = "Node_Function";
-  Type returnType;
-  ::std::string_view name;
-  FunctionParameterList parametersNode;
-  CodeBlock body;
 
-  void generate(CodeGeneratorEvaluator &_evaluator) const {
+public:
+  Function(Type &&returnType, std::string_view name, FunctionParameterList &&params, InstructionList &&body)
+  : returnType(returnType), name(name), params(params), body(body)
+  {}
+
+  void genAsm_x86_64(CodeGeneratorEvaluator &_evaluator) const {
     _evaluator << ENDL;
     _evaluator << name << ":" << ENDL;
-    for (auto &instructionNode : body.instructions) {
-      ::std::visit([&](auto &&instr) { instr.generate(_evaluator); }, instructionNode.instruction);
-    }
+    body.genAsm_x86_64(_evaluator);
     _evaluator << INDENT << "ret" << ENDL;
   };
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "ReturnType: ", returnType.fullName(),
-                       " ; Name: ", name,
-                       " ; ParamCount: ", parametersNode.parameters.size());
-    _evaluator.increaseDepth();
-    returnType.debug(_evaluator);
-    parametersNode.debug(_evaluator);
-    body.debug(_evaluator);
-    _evaluator.decreaseDepth();
+  inline void debug(size_t depth) const {
+    logNode(depth, "ReturnType: ", returnType.fullName(), " ; Name: ", name, " ; ParamCount: ", params.size());
+    returnType.debug(depth + 1);
+    params.debug(depth + 1);
+    body.debug(depth + 1);
   }
-};
 
-struct Method : public AstNode<Method> {
-  static constexpr const char *node_name = "Node_ClassMethod";
+private:
   Type returnType;
-  ::std::string_view name;
-  FunctionParameterList parametersNode;
-  CodeBlock body;
-
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "ReturnType: ", returnType.fullName(),
-                       " ; Name: ", name,
-                       " ; ParamCount: ", parametersNode.parameters.size());
-    _evaluator.increaseDepth();
-    returnType.debug(_evaluator);
-    parametersNode.debug(_evaluator);
-    body.debug(_evaluator);
-    _evaluator.decreaseDepth();
-  }
+  std::string_view name;
+  FunctionParameterList params;
+  InstructionList body;
 };
 
-struct AccessSpecifier : public AstNode<AccessSpecifier> {
+struct Method : public interface::AstNode<Method> {
+public:
+  static constexpr const char *node_name = "Node_ClassMethod";
+
+public:
+  Method(Type &&returnType, std::string_view name, FunctionParameterList &&params, InstructionList &&body)
+  : returnType(returnType), name(name), params(params), body(body)
+  {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, "ReturnType: ", returnType.fullName(), " ; Name: ", name, " ; ParamCount: ", params.size());
+    returnType.debug(depth + 1);
+    params.debug(depth + 1);
+    body.debug(depth + 1);
+  }
+
+private:
+  Type returnType;
+  std::string_view name;
+  FunctionParameterList params;
+  InstructionList body;
+};
+
+struct AccessSpecifier : public interface::AstNode<AccessSpecifier> {
+public:
   static constexpr const char *node_name = "Node_AccessSpecifier";
-  LevelSpecifier level;
 
-  inline void debug(DebugEvaluator &_evaluator) const {
+public:
+  AccessSpecifier(Visibility level) : level(level) {}
+
+  inline void debug(size_t depth) const {
     switch (level) {
-    case LevelSpecifier::Private:
-      _evaluator.logNode(*this, "LevelSpecifier: Private");
+    case Visibility::Private:
+      logNode(depth, "Visibility: Private");
       break;
-    case LevelSpecifier::Protected:
-      _evaluator.logNode(*this, "LevelSpecifier: Protected");
+    case Visibility::Protected:
+      logNode(depth, "Visibility: Protected");
       break;
-    case LevelSpecifier::Public:
-      _evaluator.logNode(*this, "LevelSpecifier: Public");
+    case Visibility::Public:
+      logNode(depth, "Visibility: Public");
       break;
     }
   }
+
+  inline bool operator==(const Visibility vis) const {
+    return level == vis;
+  }
+
+private:
+  Visibility level;
 };
 
-struct Class : public AstNode<Class> {
+struct Class : public interface::AstNode<Class> {
+public:
   static constexpr const char *node_name = "Node_Class";
-  ::std::string_view name;
-  ::std::vector<::std::pair<Attribute, AccessSpecifier>> attributes;
-  ::std::vector<::std::pair<Method, AccessSpecifier>> methods;
+  using AttributeList = std::vector<std::pair<Attribute, AccessSpecifier>>;
+  using MethodList = std::vector<std::pair<Method, AccessSpecifier>>;
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "Name: ", name,
-                       " ; Members: ", attributes.size() + methods.size());
-    _evaluator.increaseDepth();
-    for (const auto &[attribute, accessSpecifier] : attributes) {
-      attribute.debug(_evaluator);
+public:
+  Class(std::string_view name, AttributeList &&attributes, MethodList &&methods)
+  : name(name) , attributes(attributes) , methods(methods)
+  {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, "Name: ", name, " ; Members: ", attributes.size() + methods.size());
+    for (const auto &visibility : allVisibilities)
+    {
+      AccessSpecifier(visibility).debug(depth);
+      auto filteredAttrs = attributes | std::views::filter([visibility](const auto &pair){ return pair.second == visibility; });;
+      auto filteredMethods = methods | std::views::filter([visibility](const auto &pair){ return pair.second == visibility; });
+      for (const auto &[attribute, accessSpecifier] : filteredAttrs) {
+        attribute.debug(depth + 1);
+      }
+      for (const auto &[method, accessSpecifier] : filteredMethods) {
+        method.debug(depth + 1);
+      }
     }
-    for (const auto &[method, accessSpecifier] : methods) {
-      method.debug(_evaluator);
-    }
-    _evaluator.decreaseDepth();
   }
+
+private:
+  std::string_view name;
+  AttributeList attributes;
+  MethodList methods;
 };
 
-struct TranslationUnit : public AstNode<TranslationUnit> {
+struct TranslationUnit : public interface::AstNode<TranslationUnit> {
+public:
   static constexpr const char *node_name = "Node_TranslationUnit";
-  ::std::vector<Function> functions;
-  ::std::vector<Class> classes;
+
+public:
+  TranslationUnit(std::vector<Function> &&functions, std::vector<Class> &&classes)
+  : functions(functions), classes(classes)
+  {}
 
   inline bool isDecorated() const { return true; }
 
-  inline ::std::string genAsm_x86_64() const {
+  inline std::string genAsm_x86_64() const {
     CodeGeneratorEvaluator evaluator;
-   
+
     for (auto &func : functions) {
-      func.generate(evaluator);
+      func.genAsm_x86_64(evaluator);
     }
 
     for (auto &classNode : classes) {
@@ -341,62 +419,62 @@ struct TranslationUnit : public AstNode<TranslationUnit> {
       TODO("Implement classNodes");
     }
 
-    ::std::stringstream asmCode;
+    std::stringstream asmCode;
     evaluator.generateAsmCode(asmCode);
 
     return asmCode.str();
   }
 
-  inline void debug(DebugEvaluator &_evaluator) const {
-    _evaluator.logNode(*this, "Function count: ", functions.size());
-    _evaluator.increaseDepth();
-    for (const auto &funcNode : functions)
-      funcNode.debug(_evaluator);
-    _evaluator.decreaseDepth();
-    _evaluator.logNode(*this, "Class count: ", classes.size());
-    _evaluator.increaseDepth();
-    for (const auto &classNode : classes)
-      classNode.debug(_evaluator);
-    _evaluator.decreaseDepth();
+  inline void debug(size_t depth) const {
+    logNode(depth, "Function count: ", functions.size());
+    for (const auto &funcNode : functions) {
+      funcNode.debug(depth + 1);
+    }
+
+    logNode(depth, "Class count: ", classes.size());
+    for (const auto &classNode : classes) {
+      classNode.debug(depth + 1);
+    }
   }
 
-  inline void decorate(DecoratorEvaluator &)
-  {
-
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    (void) scopeStack;
+    (void) scope;
   }
+
+private:
+  std::vector<Function> functions;
+  std::vector<Class> classes;
 };
 
+#define Y(T) X(T, T::node_name)
 #define PURE_NODE_LIST                                                         \
-  X(Type, "Node_Type")                                                         \
-  X(NumberLiteral, "Node_NumberLiteral")                                       \
-  X(StringLiteral, "Node_StringLiteral")                                       \
-  X(ReturnStatement, "Node_ReturnStatement")                                   \
-  X(InlineAsmStatement, "Node_InlineAsmStatement")                             \
-  X(InstructionList, "Node_InstructionList")                                   \
-  X(FunctionParameter, "Node_FunctionParameter")                               \
-  X(FunctionParameterList, "Node_FunctionParameter")                           \
-  X(Function, "Node_Function")                                                 \
-  X(Method, "Node_ClassMethod")                                                \
-  X(AccessSpecifier, "Node_AccessSpecifier")                                   \
-  X(Attribute, "Node_ClassAttribute")                                          \
-  X(Class, "Node_Class")                                                       \
-  X(TranslationUnit, "Node_TranslationUnit")
+  Y(Type)                                                                      \
+  Y(NumberLiteral)                                                             \
+  Y(StringLiteral)                                                             \
+  Y(ReturnStatement)                                                           \
+  Y(InlineAsmStatement)                                                        \
+  Y(InstructionList)                                                           \
+  Y(FunctionParameter)                                                         \
+  Y(FunctionParameterList)                                                     \
+  Y(Function)                                                                  \
+  Y(Method)                                                                    \
+  Y(AccessSpecifier)                                                           \
+  Y(Attribute)                                                                 \
+  Y(Class)                                                                     \
+  Y(TranslationUnit)
 
 #define VARIANT_NODE_LIST                                                      \
-  X(Expression, "Node_Expression")                                             \
-  X(Instruction, "Node_Instruction")
+  Y(Expression)                                                                \
+  Y(Instruction)
 
 #define NODE_LIST                                                              \
   PURE_NODE_LIST                                                               \
   VARIANT_NODE_LIST
 
-#define ALL_NODE_LIST                                                          \
-  NODE_LIST                                                                    \
-  X(CodeBlock, "Node_CodeBlock")
-
 #define X(node, str)                                                           \
   inline const char *nodeToStr(const node &) { return str; }
-  NODE_LIST
+NODE_LIST
 #undef X
 
 } /* namespace ast */

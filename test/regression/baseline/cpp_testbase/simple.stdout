@@ -1,25 +1,16 @@
 [35m[Node_TranslationUnit] Function count: 1
 [0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 2
 [0m[35m    [Node_Type] int
-[0m[35m    [Node_FunctionParameter] ParameterCount: 2
+[0m[35m    [Node_FunctionParameterList] ParameterCount: 2
 [0m[35m      [Node_FunctionParameter] Type: int ; Name: argc
 [0m[35m      [Node_FunctionParameter] Type: char** ; Name: argv
 [0m[35m    [Node_InstructionList] InstructionCount: 1
 [0m[35m      [Node_ReturnStatement] 
-[0m[35m        [Node_NumberLiteral] 1
+[0m[35m      [Node_NumberLiteral] 1
 [0m[35m[Node_TranslationUnit] Class count: 0
 [0m
 == Decorating
-[35m[Node_TranslationUnit] Function count: 1
-[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 2
-[0m[35m    [Node_Type] Type: int
-[0m[35m    [Node_FunctionParameter] ParameterCount: 2
-[0m[35m      [Node_FunctionParameter] Type: int ; Name: argc
-[0m[35m      [Node_FunctionParameter] Type: char** ; Name: argv
-[0m[35m    [Node_InstructionList] InstructionCount: 1
-[0m[35m      [Node_ReturnStatement] 
-[0m[35m        [Node_NumberLiteral] 1
-[0m[35mScopeStack of 1 scopes
+[35mScopeStack of 1 scopes
 [0m[35m[Scope] id=0 ; parent=0
   [Type] id=1 ; name=int ; size=32
   [Type] id=0 ; name=void ; size=0
@@ -28,12 +19,12 @@
 [35m[Node_TranslationUnit] Function count: 1
 [0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 2
 [0m[35m    [Node_Type] int
-[0m[35m    [Node_FunctionParameter] ParameterCount: 2
+[0m[35m    [Node_FunctionParameterList] ParameterCount: 2
 [0m[35m      [Node_FunctionParameter] Type: int ; Name: argc
 [0m[35m      [Node_FunctionParameter] Type: char** ; Name: argv
 [0m[35m    [Node_InstructionList] InstructionCount: 1
 [0m[35m      [Node_ReturnStatement] 
-[0m[35m        [Node_NumberLiteral] 1
+[0m[35m      [Node_NumberLiteral] 1
 [0m[35m[Node_TranslationUnit] Class count: 0
 [0m
 == Generating code
@@ -54,8 +45,8 @@ _start:
 	syscall                      ; Make the syscall
 
 main:
-  mov rbx, 1
-  ret
+	mov rbx, 1
+	ret
 	ret
 == Generated .o as a.o:
 == Generating exe as a.out:
