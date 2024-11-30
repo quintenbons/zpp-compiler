@@ -13,8 +13,10 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  LOG("== Parsing");
   auto translationUnitHandle = core::TranslationUnitHandle(args[1]);
-
+  LOG("");
+  LOG("== Done parsing");
   translationUnitHandle.debug();
   LOG("");
   LOG("== Decorating");
