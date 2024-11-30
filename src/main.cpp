@@ -2,7 +2,6 @@
 #include <vector>
 #include <cassert>
 
-#include "codegen/generate.hpp"
 #include "core/TranslationUnitHandle.hpp"
 
 int main(int argc, char** argv)
@@ -25,7 +24,7 @@ int main(int argc, char** argv)
   translationUnitHandle.debug();
   LOG("");
   LOG("== Generating code");
-  std::string generatedAsm = codegen::generateAsm(*translationUnitHandle.getOrCreateTranslationUnit());
+  std::string generatedAsm = translationUnitHandle.genAsm_x86_64();
   LOG("== Generated asm to a.asm:");
   std::cout << generatedAsm;
   std::ofstream("./a.asm", std::ios_base::out) << generatedAsm;
