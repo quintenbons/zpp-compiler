@@ -45,6 +45,10 @@ target_compile_options(${COMPILER_NAME} PRIVATE
 target_include_directories(${COMPILER_NAME} PRIVATE ${SRC_DIR})
 target_compile_definitions(${COMPILER_NAME} PRIVATE -DZPP_DEBUG_MODE)
 
+find_package(Boost 1.65 REQUIRED COMPONENTS filesystem)
+include_directories(${Boost_INCLUDE_DIRS})
+target_link_libraries(${COMPILER_NAME} ${Boost_LIBRARIES})
+
 find_library(BACKTRACE_LIBRARY NAMES backtrace PATHS /usr/local/lib NO_DEFAULT_PATH)
 if(BACKTRACE_LIBRARY)
   add_definitions(-DBOOST_STACKTRACE_USE_BACKTRACE)
