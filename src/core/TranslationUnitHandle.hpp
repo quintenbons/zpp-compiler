@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ast/nodes.hpp"
+#include "codegen/generate.hpp"
+#include "dbg/errors.hpp"
 #include "lexing_parsing/parser.ipp"
 
 namespace core
@@ -16,15 +18,16 @@ public:
     _parser = std::make_unique<parser::Parser>(std::move(inputFile));
   }
 
-  ast::TranslationUnit *getOrCreateTranslationUnit()
+  ast::TranslationUnit &getOrCreateTranslationUnit()
   {
     parseIfNeeded();
-    return _translationUnit.get();
+    DEBUG_ASSERT(_translationUnit, "Translation unit creation failed");
+    return *_translationUnit.get();
   }
 
   void debug()
   {
-    getOrCreateTranslationUnit()->debug(0);
+    getOrCreateTranslationUnit().debug(0);
   }
 
   void decorate()
@@ -33,8 +36,16 @@ public:
 
     parseIfNeeded();
     _scopeStack = std::make_unique<scopes::ScopeStack>();
-    getOrCreateTranslationUnit()->decorate(*_scopeStack, _scopeStack->rootScope());
+    getOrCreateTranslationUnit().decorate(*_scopeStack, _scopeStack->rootScope());
     _scopeStack->logDebug();
+  }
+
+  std::string genAsm_x86_64()
+  {
+    const auto &translationUnit = getOrCreateTranslationUnit();
+    DEBUG_ASSERT(translationUnit.isDecorated(), "Translation unit is not decorated!");
+    codegen::NasmGenerator_x86_64 codeGenerator;
+    return translationUnit.genAsm_x86_64(codeGenerator);
   }
 
 private:

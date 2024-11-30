@@ -9,16 +9,21 @@
 #include <vector>
 #include <ranges>
 
-#include "ast/scopes/scopeStack.hpp"
-#include "dbg/utils.hpp"
 #include "interface/AstNode.hpp"
-#include "ast/CodeGeneratorEvaluator.ipp"
+#include "codegen/generate.hpp"
+#include "ast/scopes/scopeStack.hpp"
 #include "ast/scopes/registers.hpp"
+#include "dbg/utils.hpp"
 #include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
 #include "scopes/types.hpp"
 
 namespace ast {
+
+namespace {
+  static constexpr auto ENDL = codegen::NasmGenerator_x86_64::ENDL;
+  static constexpr auto INDENT = codegen::NasmGenerator_x86_64::INDENT;
+}
 
 enum class Visibility { Public, Protected, Private };
 constexpr Visibility allVisibilities[] = { Visibility::Public, Visibility::Protected, Visibility::Private };
@@ -63,7 +68,7 @@ public:
     logNode(depth, number);
   }
 
-  void loadValueInRegister(CodeGeneratorEvaluator &_evaluator, scopes::Register targetRegister) const {
+  void loadValueInRegister(codegen::NasmGenerator_x86_64 &_evaluator, scopes::Register targetRegister) const {
     _evaluator << INDENT << "mov " << scopes::regToStr(targetRegister) << ", " << number << ENDL;
   }
 
@@ -105,7 +110,7 @@ public:
     std::visit([depth](const auto &node) { node.debug(depth); }, expr);
   }
 
-  void loadValueInRegister(CodeGeneratorEvaluator &_evaluator, scopes::Register targetRegister) const {
+  void loadValueInRegister(codegen::NasmGenerator_x86_64 &_evaluator, scopes::Register targetRegister) const {
     std::visit( [&_evaluator, targetRegister](auto &&expr) { expr.loadValueInRegister(_evaluator, targetRegister); }, expr);
   }
 
@@ -120,7 +125,7 @@ public:
 public:
   ReturnStatement(Expression &&expression): expression(std::move(expression)) {}
 
-  void genAsm_x86_64(CodeGeneratorEvaluator &_evaluator) const {
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
     expression.loadValueInRegister(_evaluator, scopes::returnRegister);
     _evaluator << INDENT << "ret" << ENDL;
   }
@@ -149,7 +154,7 @@ public:
   : asmBlock(std::move(asmBlock)), requests(std::move(requests))
   {}
 
-  void genAsm_x86_64(CodeGeneratorEvaluator &_evaluator) const {
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
     _evaluator << ";-- START -- asm binding requests" << ENDL;
     // TODO: not assume that every variable is always in rdx
 
@@ -197,7 +202,7 @@ public:
     std::visit([depth](const auto &node) { node.debug(depth); }, instr);
   }
 
-  void genAsm_x86_64(CodeGeneratorEvaluator &evaluator) const {
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
     std::visit([&evaluator](const auto &node) { node.genAsm_x86_64(evaluator); }, instr);
   }
 
@@ -212,7 +217,7 @@ public:
 public:
   InstructionList(std::vector<Instruction> &&instructions): instructions(std::move(instructions)) {}
 
-  void genAsm_x86_64(CodeGeneratorEvaluator &evaluator) const {
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
     for (const auto &instr : instructions) {
       instr.genAsm_x86_64(evaluator);
     }
@@ -290,11 +295,11 @@ public:
   : returnType(returnType), name(name), params(params), body(body)
   {}
 
-  void genAsm_x86_64(CodeGeneratorEvaluator &_evaluator) const {
-    _evaluator << ENDL;
-    _evaluator << name << ":" << ENDL;
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
+    _evaluator.exposeGlobalLabel(name);
+    _evaluator.functionDeclare(name);
     body.genAsm_x86_64(_evaluator);
-    _evaluator << INDENT << "ret" << ENDL;
+    _evaluator.functionReturnEmpty();
   };
 
   inline void debug(size_t depth) const {
@@ -407,9 +412,7 @@ public:
 
   inline bool isDecorated() const { return true; }
 
-  inline std::string genAsm_x86_64() const {
-    CodeGeneratorEvaluator evaluator;
-
+  inline std::string genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
     for (auto &func : functions) {
       func.genAsm_x86_64(evaluator);
     }
