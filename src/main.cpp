@@ -10,13 +10,12 @@
 #include "dbg/iohelper.hpp"
 
 static inline int fullDebugExec(argparse::CompilerOptions &options) {
-  utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-  utils::SafeOFStream asmFile("./a.asm");
-  utils::SafeOFStream objFile("./a.o");
-  utils::SafeOFStream outputFile("./a.out");
+  static constexpr const char *asmFilePath = "./a.asm";
+  static constexpr const char *objFilePath = "./a.o";
 
+  LOG(options.inputFiles[0]);
   LOG("== Parsing");
-  auto translationUnitHandle = core::TranslationUnitHandle(inputFile.path());
+  auto translationUnitHandle = core::TranslationUnitHandle(options.inputFiles.at(0));
   LOG("");
   LOG("== Done parsing");
   translationUnitHandle.debug();
@@ -32,13 +31,13 @@ static inline int fullDebugExec(argparse::CompilerOptions &options) {
   std::string generatedAsm = translationUnitHandle.genAsm_x86_64();
   LOG("== Generated asm to a.asm:");
   std::cout << generatedAsm;
-  asmFile.writeAndClose(generatedAsm);
+  utils::fs::safeOfStream(asmFilePath) << generatedAsm;
 
   LOG("== Generated .o as a.o:");
-  assemble::runNasmSafe(asmFile.path(), objFile.path());
+  assemble::runNasmSafe(asmFilePath, objFilePath);
 
   LOG("== Generating exe as a.out:");
-  linking::runLdSafe(objFile.path(), outputFile.path());
+  linking::runLdSafe(objFilePath, options.outputFile);
 
   return 0;
 }
@@ -55,39 +54,25 @@ int main(int argc, char** argv)
     TODO("Preprocessing not yet implemented");
   }
 
-  // redundancy here is acceptable to make sure io errors happen sooner rather than later
-  else if (options.compileOnly) {
-    utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-    utils::SafeOFStream outputFile(options.outputFile);
+  auto tu = core::TranslationUnitHandle(options.inputFiles.at(0));
+  tu.decorate();
+  auto generatedAsm = tu.genAsm_x86_64();
 
-    auto tu = core::TranslationUnitHandle(inputFile.path());
-    tu.decorate();
-    outputFile << tu.genAsm_x86_64();
+  if (options.compileOnly) {
+    utils::fs::safeOfStream(options.outputFile) << generatedAsm;
+    return 0;
   }
 
-  else if (options.compileAndAssemble) {
-    utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-    utils::TempOFStream asmFile("asm");
-    utils::SafeOFStream outputFile(options.outputFile);
+  auto asmFilePath = utils::fs::getTempFilePath("asm");
+  utils::fs::safeOfStream(asmFilePath) << generatedAsm;
 
-    auto tu = core::TranslationUnitHandle(inputFile.path());
-    tu.decorate();
-    asmFile.writeAndClose(tu.genAsm_x86_64());
-
-    assemble::runNasmSafe(asmFile.path(), outputFile.path());
+  if (options.compileAndAssemble) {
+    assemble::runNasmSafe(asmFilePath, options.outputFile);
+    return 0;
   }
 
-  else {
-    utils::DryRunSafeIFStream inputFile(options.inputFiles.at(0));
-    utils::TempOFStream asmFile("asm");
-    utils::TempOFStream objectFile("o");
-    utils::DryRunSafeIFStream outputFile(options.outputFile);
+  auto objFilePath = utils::fs::getTempFilePath("o");
+  assemble::runNasmSafe(asmFilePath, objFilePath);
 
-    auto tu = core::TranslationUnitHandle(options.inputFiles.at(0));
-    tu.decorate();
-    asmFile.writeAndClose(tu.genAsm_x86_64());
-
-    assemble::runNasmSafe(asmFile.path(), objectFile.path());
-    linking::runLdSafe(objectFile.path(), outputFile.path());
-  }
+  linking::runLdSafe(objFilePath, options.outputFile, options.createSharedLib);
 }

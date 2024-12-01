@@ -89,4 +89,4 @@ enum ExitCode: int {
     }                                                                          \
   } while (0)
 
-#define TODO(msg) THROW_CODE("TODO " << msg, EXIT_UNSUPPORTED)
+#define TODO(msg) SILENT_THROW_CODE("TODO " << msg, EXIT_UNSUPPORTED)
