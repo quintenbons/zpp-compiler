@@ -7,6 +7,8 @@ export ZPP_ASM_TESTBASE="$ZPP_REPO_PATH/asm_testbase"
 export ZPP_TEST_PATH="$ZPP_REPO_PATH/test"
 export ZPP_BIN_PATH="$ZPP_BUILD_PATH/bin"
 export ZPP_ARTIFACTS_PATH="$ZPP_BUILD_PATH/.artifacts"
+export ZPP_REGRESSION_BASELINE_PATH="$ZPP_REPO_PATH/test/regression/baseline"
+export ZPP_REGRESSION_RESULTS_PATH="$ZPP_REPO_PATH/test/regression/results"
 
 if [ ":$PATH:" != *":$ZPP_BIN_PATH:"* ]; then
   export PATH="$ZPP_BIN_PATH:$PATH"
@@ -25,11 +27,12 @@ zpp_nasm              nasm with recommended flags
 zpp_assemble_binary   assemble and link .asm files to ./a.out
 zpp_run_nasm          assemble, link and execute .asm files
 
-zpp_test_cpp          run regression tests on c++ test base
-zpp_test_cpp_debug    run regression tests on c++ test base with more verbose output
-zpp_regression_diff   shows which files changed (dumps vimdiff command)
-zpp_regression_sync   syncs baseline based on current result
-zpp_test_asm          run assembly tests
+zpp_test_cpp              run regression tests on c++ test base
+zpp_test_cpp_debug        run regression tests on c++ test base with more verbose output
+zpp_regression_diff       shows which files changed (dumps vimdiff command)
+zpp_regression_fulldiff   shows which files changed (dumps vimdiff command)
+zpp_regression_sync       syncs baseline based on current result
+zpp_test_asm              run assembly tests
 """
 }
 
@@ -95,11 +98,34 @@ zpp_test_cpp_debug() {
 }
 
 zpp_regression_diff() {
+  diff --exclude="*.o" --exclude="*.so" --exclude="*.out" -q -r $ZPP_REPO_PATH/test/regression/baseline/ $ZPP_REPO_PATH/test/regression/results/ | awk '{print "vimdiff " $2 " " $4}'
+}
+
+zpp_regression_fulldiff() {
   diff -q -r $ZPP_REPO_PATH/test/regression/baseline/ $ZPP_REPO_PATH/test/regression/results/ | awk '{print "vimdiff " $2 " " $4}'
 }
 
 zpp_regression_sync() {
-  rsync -a $ZPP_REPO_PATH/test/regression/results/ $ZPP_REPO_PATH/test/regression/baseline
+  echo "Hard resetting baseline dir" >&2
+  pushd $ZPP_REPO_PATH
+  rm -r "$ZPP_REGRESSION_BASELINE_PATH"
+  git checkout "$ZPP_REGRESSION_BASELINE_PATH"
+  popd
+
+  realdiffs=$(zpp_regression_diff)
+
+  if [ -z "$realdiffs" ]; then
+    if [ "$1" == "-f" ]; then
+      rsync -a "$ZPP_REGRESSION_RESULTS_PATH/" "$ZPP_REGRESSION_BASELINE_PATH"
+      echo "No real diffs were seen (possibly .o .so, .out)"
+    else
+      echo "No real diffs were seen (possibly .o .so, .out) if you want to force sync, use -f"
+    fi
+  else
+    rsync -a "$ZPP_REGRESSION_RESULTS_PATH/" "$ZPP_REGRESSION_BASELINE_PATH"
+    echo "Real diffs:"
+    printf '%s\n' "$realdiffs"
+  fi
 }
 
 zpp_test_asm() {
