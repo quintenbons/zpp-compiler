@@ -1,8 +1,11 @@
 #pragma once
 
+#include <boost/filesystem.hpp>
+
 #include "ast/nodes.hpp"
 #include "codegen/generate.hpp"
 #include "dbg/errors.hpp"
+#include "dbg/iohelper.hpp"
 #include "lexing_parsing/parser.ipp"
 
 namespace core
@@ -11,11 +14,15 @@ namespace core
 class TranslationUnitHandle
 {
 public:
-  TranslationUnitHandle(const char *filename)
+  TranslationUnitHandle(std::ifstream &&inputFile)
   {
-    std::ifstream inputFile(filename);
-    DEBUG_ASSERT(inputFile.is_open(), "Could not open file");
     _parser = std::make_unique<parser::Parser>(std::move(inputFile));
+    parseIfNeeded();
+  }
+
+  TranslationUnitHandle(const boost::filesystem::path &filename)
+  : TranslationUnitHandle(utils::fs::safeIfStream(filename))
+  {
   }
 
   ast::TranslationUnit &getOrCreateTranslationUnit()
@@ -30,6 +37,11 @@ public:
     getOrCreateTranslationUnit().debug(0);
   }
 
+  void debugScopeStack()
+  {
+    _scopeStack->logDebug();
+  }
+
   void decorate()
   {
     if (_scopeStack) return;
@@ -37,7 +49,6 @@ public:
     parseIfNeeded();
     _scopeStack = std::make_unique<scopes::ScopeStack>();
     getOrCreateTranslationUnit().decorate(*_scopeStack, _scopeStack->rootScope());
-    _scopeStack->logDebug();
   }
 
   std::string genAsm_x86_64()

@@ -1,6 +1,5 @@
+/home/qbons/zpp-compiler/cpp_testbase/hello_world.cpp
 == Parsing
-
-== Done parsing
 [Line: 0, Offset: 0] Build failed: Lexing failure: unknown character at pos[0]: [#]
 #include <iostream>
 ^

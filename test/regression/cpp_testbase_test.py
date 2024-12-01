@@ -6,7 +6,7 @@ import logging
 import shutil
 from pathlib import Path
 
-ACCEPTABLE_RETURNCODES = [0, 1]
+ACCEPTABLE_RETURNCODES = [0, 1, 3]
 OUTPUT_EXTS = ["asm", "o", "out"]
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -69,7 +69,7 @@ def try_move_output(test_input, subprocess_result: subprocess.CompletedProcess[s
 
 def run_compiler(test_input):
     # cmd = ["z++", str(test_input), "-o", str(output_file)] # once issue #12 is done
-    cmd = ["z++", str(test_input)]
+    cmd = ["z++", "-d", str(test_input)]
 
     logging.debug(f"Compiling file {test_input} into [a.out]")
     logging.debug(f"Command [{' '.join(cmd)}]")

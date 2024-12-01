@@ -1,26 +1,28 @@
+#include <cstdlib>
 #include <iostream>
-#include <vector>
 #include <cassert>
 
+#include "codegen/assemble.hpp"
+#include "codegen/linking.hpp"
 #include "core/TranslationUnitHandle.hpp"
+#include "dbg/argparse.hpp"
+#include "dbg/errors.hpp"
+#include "dbg/iohelper.hpp"
 
-int main(int argc, char** argv)
-{
-  std::vector<const char*> args(argv, argv+argc);
+static inline int fullDebugExec(argparse::CompilerOptions &options) {
+  static constexpr const char *asmFilePath = "./a.asm";
+  static constexpr const char *objFilePath = "./a.o";
 
-  if (args.size() != 2) {
-    std::cerr << "Usage: " << args[0] << " [inputfile]" << std::endl;
-    return 1;
-  }
-
+  LOG(options.inputFiles[0]);
   LOG("== Parsing");
-  auto translationUnitHandle = core::TranslationUnitHandle(args[1]);
+  auto translationUnitHandle = core::TranslationUnitHandle(options.inputFiles.at(0));
   LOG("");
   LOG("== Done parsing");
   translationUnitHandle.debug();
   LOG("");
   LOG("== Decorating");
   translationUnitHandle.decorate();
+  translationUnitHandle.debugScopeStack();
   LOG("");
   LOG("== Done decorating");
   translationUnitHandle.debug();
@@ -29,21 +31,48 @@ int main(int argc, char** argv)
   std::string generatedAsm = translationUnitHandle.genAsm_x86_64();
   LOG("== Generated asm to a.asm:");
   std::cout << generatedAsm;
-  std::ofstream("./a.asm", std::ios_base::out) << generatedAsm;
+  utils::fs::safeOfStream(asmFilePath) << generatedAsm;
 
   LOG("== Generated .o as a.o:");
-  int nasmResult = std::system("nasm -f elf64 ./a.asm -o ./a.o");
-  if (nasmResult != 0) {
-    std::cerr << "Error: nasm command failed with exit code " << nasmResult
-              << std::endl;
-    return nasmResult;
-  }
+  assemble::runNasmSafe(asmFilePath, objFilePath);
 
   LOG("== Generating exe as a.out:");
-  int ldResult = std::system("ld ./a.o -o ./a.out");
-  if (ldResult != 0) {
-    std::cerr << "Error: ld command failed with exit code " << ldResult
-              << std::endl;
-    return ldResult;
+  linking::runLdSafe(objFilePath, options.outputFile);
+
+  return 0;
+}
+
+int main(int argc, char** argv)
+{
+  auto options = argparse::ArgParser(argc, argv).parse();
+
+  if (options.fullDebugExec) {
+    fullDebugExec(options);
   }
+
+  else if (options.preprocessOnly) {
+    TODO("Preprocessing not yet implemented");
+  }
+
+  auto tu = core::TranslationUnitHandle(options.inputFiles.at(0));
+  tu.decorate();
+  auto generatedAsm = tu.genAsm_x86_64();
+
+  if (options.compileOnly) {
+    utils::fs::safeOfStream(options.outputFile) << generatedAsm;
+    return 0;
+  }
+
+  auto asmFilePath = utils::fs::getTempFilePath("asm");
+  utils::fs::safeOfStream(asmFilePath) << generatedAsm;
+
+  if (options.compileAndAssemble) {
+    assemble::runNasmSafe(asmFilePath, options.outputFile);
+    return 0;
+  }
+
+  auto objFilePath = utils::fs::getTempFilePath("o");
+  assemble::runNasmSafe(asmFilePath, objFilePath);
+
+  linking::runLdSafe(objFilePath, options.outputFile, options.createSharedLib);
 }
