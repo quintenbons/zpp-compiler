@@ -4,7 +4,6 @@
 
 namespace codegen
 {
-
 class NasmGenerator_x86_64
 {
 public:
@@ -58,7 +57,7 @@ public:
   }
 
   void emitGlobalDirective(const std::string_view &name) {
-    textSection.globalDeclarations << INDENT << "global " << name << ENDL;
+    textSection.globalDeclarations << INDENT << "global " << name << ":function" << ENDL;
   }
 
   void emitFunctionLabel(const std::string_view &name) {
