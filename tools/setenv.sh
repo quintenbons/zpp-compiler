@@ -26,7 +26,7 @@ cdd                   cd to repo root
 zpp_setenv            reset zpp environment
 zpp_clean             clean build directories
 zpp_build             build all targets (-c/-d)
-zpp_build_stdlib      build stdlib only
+zpp_build_stdlib      build the stdlib
 zpp_nasm              nasm with recommended flags
 zpp_assemble_binary   assemble and link .asm files to ./a.out
 zpp_run_nasm          assemble, link and execute .asm files
@@ -78,8 +78,13 @@ _zpp_build_nasm() {
   local zpp_lib_name_nolibprefix=$(echo $zpp_lib_name_noext | sed 's/lib//g')
   mkdir -p $ZPP_ARTIFACTS_PATH
   zpp_nasm $nasm_file -o $ZPP_ARTIFACTS_PATH/a.o
-  LD_LIBRARY_PATH=$ZPP_LIB64_PATH
-  ld $ZPP_ARTIFACTS_PATH/a.o -L/$ZPP_LIB64_PATH -l$zpp_lib_name_nolibprefix -o $ZPP_ARTIFACTS_PATH/a.out
+  LD_LIBRARY_PATH=" "
+  ld $ZPP_ARTIFACTS_PATH/a.o \
+    -L$ZPP_LIB64_PATH \
+    -l$zpp_lib_name_nolibprefix \
+    -o $ZPP_ARTIFACTS_PATH/a.out \
+    -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
+    -rpath $ZPP_LIB64_PATH
   echo $ZPP_ARTIFACTS_PATH/a.out
 }
 
