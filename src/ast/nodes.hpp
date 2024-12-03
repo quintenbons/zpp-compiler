@@ -118,6 +118,26 @@ private:
   ExpressionVariant expr;
 };
 
+class Declaration : public interface::AstNode<Declaration> {
+public:
+  static constexpr const char *node_name = "Node_Declaration";
+
+public:
+  Declaration(Type &&type, std::string_view name): type(std::move(type)), name(name) {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
+  }
+
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &) const {
+    SILENT_THROW_CODE("genAsm_x86_64 is not implemented for Declaration", 0);
+  }
+
+private:
+  Type type;
+  std::string_view name;
+};
+
 class ReturnStatement : public interface::AstNode<ReturnStatement> {
 public:
   static constexpr const char *node_name = "Node_ReturnStatement";
@@ -188,8 +208,8 @@ public:
   static constexpr const char *node_name = "Node_Instruction";
   using InstructionVariant = std::variant<
     ReturnStatement,
-    InlineAsmStatement
-    // Declaration,
+    InlineAsmStatement,
+    Declaration
     // Definition,
   >;
 
@@ -452,6 +472,7 @@ private:
 #define Y(T) X(T, T::node_name)
 #define PURE_NODE_LIST                                                         \
   Y(Type)                                                                      \
+  Y(Declaration)                                                               \
   Y(NumberLiteral)                                                             \
   Y(StringLiteral)                                                             \
   Y(ReturnStatement)                                                           \

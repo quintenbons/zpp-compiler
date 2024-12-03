@@ -103,9 +103,14 @@ private:
 
   std::string_view parsePureType()
   {
-    if (_currentToken.type == TT_K_INT) return match(TT_K_INT);
-    if (_currentToken.type == TT_K_VOID) return match(TT_K_VOID);
-    if (_currentToken.type == TT_K_CHAR) return match(TT_K_CHAR);
+    /* if (_currentToken.type == TT_K_INT) return match(TT_K_INT); */
+    /* if (_currentToken.type == TT_K_VOID) return match(TT_K_VOID); */
+    /* ... */
+#define X(token, str) \
+    if (_currentToken.type == token) return match(token);
+    PURE_TYPES_TOKEN_LIST
+#undef X
+
     return match(TT_IDENT);
   }
 
@@ -276,9 +281,24 @@ private:
         return ast::Instruction(parseReturnStatement());
       case lexer::TT_K_ASM:
         return ast::Instruction(parseInlineAsmStatement());
+
+      /* case lexer::TT_K_INT: return ast::Instruction(...); */
+      /* case lexer::TT_K_VOID: return ast::Instruction(...); */
+      /* ... */
+      #define X(token, str) \
+        case token: return ast::Instruction(parseDeclaration());
+        PURE_TYPES_TOKEN_LIST
+      #undef X
       default:
         USER_THROW("Unexpected token while parsing instruction [" << _currentToken.type << "]", _currentToken.position);
     }
+  }
+
+  ast::Declaration parseDeclaration()
+  {
+    ast::Type type = parseType();
+    std::string_view name = match(TT_IDENT);
+    return ast::Declaration(std::move(type), std::move(name));
   }
 
   ast::InstructionList parseCodeBlock()
