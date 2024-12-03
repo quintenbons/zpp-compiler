@@ -34,7 +34,7 @@ protected:
   static inline void logNode(size_t depth, Ts &&... args)
   {
     std::stringstream ss;
-    ss << std::string(depth * 2, ' ') << "[" << Derived::node_name << "] ";
+    ss << INDENT_D(depth) << "[" << Derived::node_name << "] ";
     if constexpr (sizeof...(args) > 0)
     {
       (ss << ... << args);

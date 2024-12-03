@@ -20,10 +20,10 @@ public:
 
 public:
   NasmGenerator_x86_64() {
-    startDataSection();
-    startRODataSection();
-    startBSSSection();
-    startTextSection();
+    emitDataSectionDirective();
+    emitRODataSectionDirective();
+    emitBSSSectionDirective();
+    emitTextSectionDirective();
   };
 
   template <typename T>
@@ -32,24 +32,24 @@ public:
     return *this;
   }
 
-  void startDataSection() {
+  void emitDataSectionDirective() {
     dataSection << "section .data";
   }
 
-  void startRODataSection() {
+  void emitRODataSectionDirective() {
     RODataSection << "section .rodata";
   }
 
-  void startBSSSection() {
+  void emitBSSSectionDirective() {
     bssSection << "section .bss";
   }
 
-  void startTextSection() {
+  void emitTextSectionDirective() {
     textSection.sectionTitle << "section .text";
   }
 
-  void generateStartProcedure() {
-    exposeGlobalLabel("_start");
+  void emitStartProcedure() {
+    emitGlobalDirective("_start");
     textSection.preBody << "_start:" << ENDL;
     textSection.preBody << INDENT << "call main" << ENDL;
     textSection.preBody << INDENT << "mov rdi, rax                 ; Exit code (0) expects return of main to be put in rax for now" << ENDL;
@@ -57,22 +57,22 @@ public:
     textSection.preBody << INDENT << "syscall                      ; Make the syscall" << ENDL;
   }
 
-  void exposeGlobalLabel(const std::string_view &name) {
+  void emitGlobalDirective(const std::string_view &name) {
     textSection.globalDeclarations << INDENT << "global " << name << ENDL;
   }
 
-  void functionDeclare(const std::string_view &name) {
+  void emitFunctionLabel(const std::string_view &name) {
     containsMain = containsMain || name == "main";
     textSection.body << name << ":" << ENDL;
   }
 
-  void functionReturnEmpty() {
+  void emitReturnInstruction() {
     textSection.body << INDENT << "ret" << ENDL;
   }
 
   void generateAsmCode(std::ostream &asmCode) {
     if (containsMain) {
-      generateStartProcedure();
+      emitStartProcedure();
     }
 
     asmCode << dataSection.str() << ENDL;

@@ -127,7 +127,7 @@ public:
 
   void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
     expression.loadValueInRegister(_evaluator, scopes::returnRegister);
-    _evaluator << INDENT << "ret" << ENDL;
+    _evaluator.emitReturnInstruction();
   }
 
   inline void debug(size_t depth) const {
@@ -296,10 +296,10 @@ public:
   {}
 
   void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    _evaluator.exposeGlobalLabel(name);
-    _evaluator.functionDeclare(name);
+    _evaluator.emitGlobalDirective(name);
+    _evaluator.emitFunctionLabel(name);
     body.genAsm_x86_64(_evaluator);
-    _evaluator.functionReturnEmpty();
+    _evaluator.emitReturnInstruction();
   };
 
   inline void debug(size_t depth) const {
@@ -384,7 +384,7 @@ public:
     for (const auto &visibility : allVisibilities)
     {
       AccessSpecifier(visibility).debug(depth);
-      auto filteredAttrs = attributes | std::views::filter([visibility](const auto &pair){ return pair.second == visibility; });;
+      auto filteredAttrs = attributes | std::views::filter([visibility](const auto &pair){ return pair.second == visibility; });
       auto filteredMethods = methods | std::views::filter([visibility](const auto &pair){ return pair.second == visibility; });
       for (const auto &[attribute, accessSpecifier] : filteredAttrs) {
         attribute.debug(depth + 1);
@@ -477,6 +477,7 @@ private:
 
 #define X(node, str)                                                           \
   inline const char *nodeToStr(const node &) { return str; }
+
 NODE_LIST
 #undef X
 
