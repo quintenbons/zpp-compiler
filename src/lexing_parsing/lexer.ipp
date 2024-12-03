@@ -28,6 +28,11 @@ namespace keywords
   constexpr const char KW_ASM[] = "asm";
 }
 
+#define PURE_TYPES_TOKEN_LIST \
+  X(TT_K_INT, "TT_K_INT") \
+  X(TT_K_VOID, "TT_K_VOID") \
+  X(TT_K_CHAR, "TT_K_CHAR")
+
 #define TOKEN_LIST \
     X(TT_NONE, "TT_NONE") \
     \
@@ -43,9 +48,7 @@ namespace keywords
     X(TT_K_PROTECTED, "TT_K_PROTECTED") \
     X(TT_K_PRIVATE, "TT_K_PRIVATE") \
     \
-    X(TT_K_INT, "TT_K_INT") \
-    X(TT_K_VOID, "TT_K_VOID") \
-    X(TT_K_CHAR, "TT_K_CHAR") \
+    PURE_TYPES_TOKEN_LIST \
     \
     X(TT_K_ASM, "TT_K_ASM") \
     \
