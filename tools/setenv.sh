@@ -7,8 +7,11 @@ export ZPP_ASM_TESTBASE="$ZPP_REPO_PATH/asm_testbase"
 export ZPP_TEST_PATH="$ZPP_REPO_PATH/test"
 export ZPP_BIN_PATH="$ZPP_BUILD_PATH/bin"
 export ZPP_ARTIFACTS_PATH="$ZPP_BUILD_PATH/.artifacts"
+export ZPP_LIBZPP_PATH="$ZPP_REPO_PATH/stdlib/zpp"
+export ZPP_LIB64_PATH="$ZPP_REPO_PATH/stdlib/lib64"
 export ZPP_REGRESSION_BASELINE_PATH="$ZPP_REPO_PATH/test/regression/baseline"
 export ZPP_REGRESSION_RESULTS_PATH="$ZPP_REPO_PATH/test/regression/results"
+export ZPP_LIB_NAME="libzpp.so"
 
 if [ ":$PATH:" != *":$ZPP_BIN_PATH:"* ]; then
   export PATH="$ZPP_BIN_PATH:$PATH"
@@ -23,6 +26,7 @@ cdd                   cd to repo root
 zpp_setenv            reset zpp environment
 zpp_clean             clean build directories
 zpp_build             build all targets (-c/-d)
+zpp_build_stdlib      build the stdlib
 zpp_nasm              nasm with recommended flags
 zpp_assemble_binary   assemble and link .asm files to ./a.out
 zpp_run_nasm          assemble, link and execute .asm files
@@ -52,6 +56,14 @@ zpp_build() {
   $ZPP_REPO_PATH/build.sh $@
 }
 
+zpp_build_stdlib() {
+  z++ --shared $ZPP_LIBZPP_PATH/stdlibc.zpp -o $ZPP_LIB64_PATH/$ZPP_LIB_NAME
+
+  if [ $? -eq 0 ]; then
+    echo "Built $ZPP_LIB_NAME at $ZPP_LIB64_PATH/$ZPP_LIB_NAME"
+  fi
+}
+
 zpp_setenv() {
   source $ZPP_REPO_PATH/setenv.sh
 }
@@ -62,9 +74,17 @@ zpp_nasm() {
 
 _zpp_build_nasm() {
   local nasm_file=$1
+  local zpp_lib_name_noext=$(basename $ZPP_LIB_NAME .so)
+  local zpp_lib_name_nolibprefix=$(echo $zpp_lib_name_noext | sed 's/lib//g')
   mkdir -p $ZPP_ARTIFACTS_PATH
   zpp_nasm $nasm_file -o $ZPP_ARTIFACTS_PATH/a.o
-  LD_LIBRARY_PATH="" ld $ZPP_ARTIFACTS_PATH/a.o -o $ZPP_ARTIFACTS_PATH/a.out
+  LD_LIBRARY_PATH=" "
+  ld $ZPP_ARTIFACTS_PATH/a.o \
+    -L$ZPP_LIB64_PATH \
+    -l$zpp_lib_name_nolibprefix \
+    -o $ZPP_ARTIFACTS_PATH/a.out \
+    -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
+    -rpath $ZPP_LIB64_PATH
   echo $ZPP_ARTIFACTS_PATH/a.out
 }
 

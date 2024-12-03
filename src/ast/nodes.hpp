@@ -159,7 +159,6 @@ public:
     // TODO: not assume that every variable is always in rdx
 
     for (auto &request : requests) {
-      LOG("generating code for request " << request.registerTo);
       _evaluator << INDENT
          << std::format("mov {}, {}", regToStr(request.registerTo),
                           regToStr(Register::REG_RAX))
