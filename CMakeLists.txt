@@ -28,6 +28,7 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/codegen/generate.hpp
   ${SRC_DIR}/codegen/linking.hpp
   ${SRC_DIR}/codegen/assemble.hpp
+  ${SRC_DIR}/codegen/GPRegisterSet.hpp
 
   ${SRC_DIR}/dbg/errors.hpp
   ${SRC_DIR}/dbg/logger.hpp
