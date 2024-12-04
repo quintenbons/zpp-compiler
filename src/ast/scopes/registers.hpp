@@ -173,7 +173,23 @@ enum class Register: uint32_t
 #define X(reg, str) reg,
     ALL_REGISTERS
 #undef X
+_COUNT
 };
+
+enum class GeneralPurposeRegister: uint32_t {
+#define X(reg, str) reg,
+REGISTER_ID_64_LIST
+#undef X
+_COUNT,
+};
+
+#define X(reg, str)                                                            \
+  static_assert(                                                               \
+      static_cast<uint32_t>(Register::reg) ==                                  \
+          static_cast<uint32_t>(GeneralPurposeRegister::reg),                  \
+      "Please keep the general purpose registers at the start of the Register & GeneralPurposeRegister enum. " STRINGIFY(reg) " did not match");
+REGISTER_ID_64_LIST
+#undef X
 
 inline const char *regToStr(Register reg)
 {
