@@ -7,7 +7,7 @@ section .text
 
 _start:
     ; Load the address of the message into rsi (argument for print)
-    lea rsi, [message]
+    lea rax, [message]
 
     ; Call the print function
     call print
