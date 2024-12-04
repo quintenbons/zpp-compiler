@@ -50,9 +50,10 @@ static std::ostream &defaultEStream = std::cerr;
 #define LOG_COLOR(msg, color) _LOG_COLOR(defaultOStream, msg, color)
 
 #define LOG_ERROR(msg) _LOG_COLOR(defaultEStream, msg, RED)
-#define LOG_DEBUG(msg)                                                         \
+#define LOG_DEBUG_COLOR(msg, color)                                            \
   do {                                                                         \
     if constexpr (_zppDebugMode) {                                             \
-      LOG_COLOR(msg, MAGENTA);                                                 \
+      LOG_COLOR(msg, color);                                                   \
     }                                                                          \
   } while (0)
+#define LOG_DEBUG(msg) LOG_DEBUG_COLOR(msg, MAGENTA)

@@ -39,7 +39,19 @@ protected:
     {
       (ss << ... << args);
     }
-    LOG_DEBUG(ss.str());
+    LOG_DEBUG_COLOR(ss.str(), MAGENTA);
+  }
+
+  template<typename... Ts>
+  static inline void logDecoration(size_t depth, Ts &&... args)
+  {
+    std::stringstream ss;
+    ss << INDENT_D(depth) << "[Decoration] ";
+    if constexpr (sizeof...(args) > 0)
+    {
+      (ss << ... << args);
+    }
+    LOG_DEBUG_COLOR(ss.str(), BLUE);
   }
 
 private:
