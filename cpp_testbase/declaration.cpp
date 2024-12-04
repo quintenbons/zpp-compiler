@@ -1,5 +1,6 @@
-int main(int argc, char **argv)
+int main()
 {
   int a;
-  char b;
+  int b;
+  int c;
 }

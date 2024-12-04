@@ -38,7 +38,7 @@ public:
 
   inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
     (void) scopeStack;
-    description = &scope.findType(name);
+    description = scope.findType(name);
   }
 
   inline std::string fullName() const {
@@ -47,12 +47,19 @@ public:
 
   inline void debug(size_t depth) const {
     logNode(depth, fullName());
+    if (description)
+      logDecoration(depth+1, "TypeDescription: ", description->name, " ; Size: ", description->bit_size, " ; Id: ", description->id);
+  }
+
+  inline scopes::bitSize_t getTypeBitSize() const {
+    if (description) return description->bit_size;
+    THROW("TypeDescription not set");
   }
 
 private:
   std::string_view name;
   int pointerDepth;
-  const scopes::TypeDescription *description{};
+  std::shared_ptr<scopes::TypeDescription> description;
 };
 
 class NumberLiteral : public interface::AstNode<NumberLiteral>
@@ -69,7 +76,16 @@ public:
   }
 
   void loadValueInRegister(codegen::NasmGenerator_x86_64 &_evaluator, scopes::Register targetRegister) const {
-    _evaluator << INDENT << "mov " << scopes::regToStr(targetRegister) << ", " << number << ENDL;
+    _evaluator.pushNumber(number, targetRegister);
+  }
+
+  void loadValueOnStack(codegen::NasmGenerator_x86_64 &_evaluator) const {
+    _evaluator.pushNumber(number, scopes::Register::REG_ESP, true);
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    (void) scopeStack;
+    (void) scope;
   }
 
 private:
@@ -86,6 +102,11 @@ public:
   inline void debug(size_t depth) const {
     logNode(depth, content);
   };
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    (void) scopeStack;
+    (void) scope;
+  }
 
   std::string_view getContent() const {
     return content;
@@ -110,6 +131,10 @@ public:
     std::visit([depth](const auto &node) { node.debug(depth); }, expr);
   }
 
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    std::visit([&scopeStack, &scope](auto &node) { node.decorate(scopeStack, scope); }, expr);
+  }
+
   void loadValueInRegister(codegen::NasmGenerator_x86_64 &_evaluator, scopes::Register targetRegister) const {
     std::visit( [&_evaluator, targetRegister](auto &&expr) { expr.loadValueInRegister(_evaluator, targetRegister); }, expr);
   }
@@ -127,15 +152,23 @@ public:
 
   inline void debug(size_t depth) const {
     logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
+    if (description)
+      logDecoration(depth+1, "VariableDescription: Id: ", description->variableId);
   }
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &) const {
-    SILENT_THROW_CODE("genAsm_x86_64 is not implemented for Declaration", 0);
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    type.decorate(scopeStack, scope);
+    description = scopeStack.addLocalVariable(name, type.getTypeBitSize());
+  }
+
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
+    _evaluator.emitDeclaration(description->location);
   }
 
 private:
   Type type;
   std::string_view name;
+  std::shared_ptr<scopes::VariableDescription> description;
 };
 
 class ReturnStatement : public interface::AstNode<ReturnStatement> {
@@ -145,14 +178,18 @@ public:
 public:
   ReturnStatement(Expression &&expression): expression(std::move(expression)) {}
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    expression.loadValueInRegister(_evaluator, scopes::returnRegister);
-    _evaluator.emitReturnInstruction();
-  }
-
   inline void debug(size_t depth) const {
     logNode(depth);
     expression.debug(depth);
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    expression.decorate(scopeStack, scope);
+  }
+
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
+    expression.loadValueInRegister(_evaluator, scopes::returnRegister);
+    _evaluator.emitReturnInstruction();
   }
 
 private:
@@ -174,6 +211,18 @@ public:
   : asmBlock(std::move(asmBlock)), requests(std::move(requests))
   {}
 
+  inline void debug(size_t depth) const {
+    logNode(depth, "Register binding request count: ", requests.size());
+    for (auto &request : requests) {
+      LOG_DEBUG(INDENT_D(depth) << "[Request] " << request.registerTo << "(" << request.varIdentifier << ")");
+    }
+    asmBlock.debug(depth + 1);
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    asmBlock.decorate(scopeStack, scope);
+  }
+
   void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
     _evaluator << ";-- START -- asm binding requests" << ENDL;
     // TODO: not assume that every variable is always in rdx
@@ -190,13 +239,6 @@ public:
     _evaluator << ";-- END -- user defined" << ENDL;
   }
 
-  inline void debug(size_t depth) const {
-    logNode(depth, "Register binding request count: ", requests.size());
-    for (auto &request : requests) {
-      LOG_DEBUG(INDENT_D(depth) << "[Request] " << request.registerTo << "(" << request.varIdentifier << ")");
-    }
-    asmBlock.debug(depth + 1);
-  }
 
 private:
   StringLiteral asmBlock;
@@ -221,6 +263,10 @@ public:
     std::visit([depth](const auto &node) { node.debug(depth); }, instr);
   }
 
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    std::visit([&scopeStack, &scope](auto &node) { node.decorate(scopeStack, scope); }, instr);
+  }
+
   void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
     std::visit([&evaluator](const auto &node) { node.genAsm_x86_64(evaluator); }, instr);
   }
@@ -236,16 +282,22 @@ public:
 public:
   InstructionList(std::vector<Instruction> &&instructions): instructions(std::move(instructions)) {}
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
-    for (const auto &instr : instructions) {
-      instr.genAsm_x86_64(evaluator);
-    }
-  }
-
   inline void debug(size_t depth) const {
     logNode(depth, "InstructionCount: ", instructions.size());
     for (const auto &instr : instructions) {
       instr.debug(depth + 1);
+    }
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    for (auto &instr : instructions) {
+      instr.decorate(scopeStack, scope);
+    }
+  }
+
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
+    for (const auto &instr : instructions) {
+      instr.genAsm_x86_64(evaluator);
     }
   }
 
@@ -264,6 +316,10 @@ public:
     logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
   }
 
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    type.decorate(scopeStack, scope);
+  }
+
 private:
   Type type;
   std::string_view name;
@@ -278,6 +334,10 @@ public:
 
   inline void debug(size_t depth) const {
     logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    type.decorate(scopeStack, scope);
   }
 
 private:
@@ -299,6 +359,12 @@ public:
     }
   }
 
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    for (auto &param : parameters) {
+      param.decorate(scopeStack, scope);
+    }
+  }
+
   inline auto size() const { return parameters.size(); }
 
 private:
@@ -314,19 +380,25 @@ public:
   : returnType(returnType), name(name), params(params), body(body)
   {}
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    _evaluator.emitGlobalDirective(name);
-    _evaluator.emitFunctionLabel(name);
-    body.genAsm_x86_64(_evaluator);
-    _evaluator.emitReturnInstruction();
-  };
-
   inline void debug(size_t depth) const {
     logNode(depth, "ReturnType: ", returnType.fullName(), " ; Name: ", name, " ; ParamCount: ", params.size());
     returnType.debug(depth + 1);
     params.debug(depth + 1);
     body.debug(depth + 1);
   }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    returnType.decorate(scopeStack, scope);
+    params.decorate(scopeStack, scope);
+    body.decorate(scopeStack, scope);
+  }
+
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
+    _evaluator.emitGlobalDirective(name);
+    _evaluator.emitFunctionLabel(name);
+    body.genAsm_x86_64(_evaluator);
+    _evaluator.emitReturnInstruction();
+  };
 
 private:
   Type returnType;
@@ -349,6 +421,12 @@ public:
     returnType.debug(depth + 1);
     params.debug(depth + 1);
     body.debug(depth + 1);
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    returnType.decorate(scopeStack, scope);
+    params.decorate(scopeStack, scope);
+    body.decorate(scopeStack, scope);
   }
 
 private:
@@ -377,6 +455,11 @@ public:
       logNode(depth, "Visibility: Public");
       break;
     }
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    (void) scopeStack;
+    (void) scope;
   }
 
   inline bool operator==(const Visibility vis) const {
@@ -414,6 +497,15 @@ public:
     }
   }
 
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    for (auto &attr : attributes) {
+      attr.first.decorate(scopeStack, scope);
+    }
+    for (auto &method : methods) {
+      method.first.decorate(scopeStack, scope);
+    }
+  }
+
 private:
   std::string_view name;
   AttributeList attributes;
@@ -429,7 +521,26 @@ public:
   : functions(functions), classes(classes)
   {}
 
-  inline bool isDecorated() const { return true; }
+  inline void debug(size_t depth) const {
+    logNode(depth, "Function count: ", functions.size());
+    for (const auto &funcNode : functions) {
+      funcNode.debug(depth + 1);
+    }
+
+    logNode(depth, "Class count: ", classes.size());
+    for (const auto &classNode : classes) {
+      classNode.debug(depth + 1);
+    }
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    for (auto &func : functions) {
+      func.decorate(scopeStack, scope);
+    }
+    for (auto &classNode : classes) {
+      classNode.decorate(scopeStack, scope);
+    }
+  }
 
   inline std::string genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
     for (auto &func : functions) {
@@ -447,22 +558,7 @@ public:
     return asmCode.str();
   }
 
-  inline void debug(size_t depth) const {
-    logNode(depth, "Function count: ", functions.size());
-    for (const auto &funcNode : functions) {
-      funcNode.debug(depth + 1);
-    }
-
-    logNode(depth, "Class count: ", classes.size());
-    for (const auto &classNode : classes) {
-      classNode.debug(depth + 1);
-    }
-  }
-
-  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
-    (void) scopeStack;
-    (void) scope;
-  }
+  inline bool isDecorated() const { return true; }
 
 private:
   std::vector<Function> functions;

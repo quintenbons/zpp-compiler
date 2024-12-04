@@ -1,6 +1,9 @@
 #pragma once
 
 #include <sstream>
+#include "ast/scopes/types.hpp"
+#include "ast/scopes/registers.hpp"
+#include "ast/scopes/memory_x86_64.hpp"
 
 namespace codegen
 {
@@ -67,6 +70,29 @@ public:
 
   void emitReturnInstruction() {
     textSection.body << INDENT << "ret" << ENDL;
+  }
+
+  void emitDeclaration(const scopes::LocationDescription &location) {
+    std::visit([this](auto &&arg) {
+      using T = std::decay_t<decltype(arg)>;
+      if constexpr (std::is_same_v<T, scopes::LocalStackOffset>) {
+        textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_ESP) << ", " << arg._byteOffset << " ; Creating space on the stack" << ENDL;
+      }
+      else if constexpr (std::is_same_v<T, scopes::GlobalStackOffset>) {
+        THROW("Global stack offset not yet implemented");
+      }
+      else if constexpr (std::is_same_v<T, scopes::Register>) {
+        THROW("Register declaration not yet implemented");
+      }
+      else {
+        THROW("Unknown location description type");
+      }
+    }, location);
+  }
+
+  void pushNumber(const /*ast::NumberLiteral::UnderlyingT*/ uint64_t &number, const scopes::Register &reg, const bool dereference = false) {
+    // TODO: dword = 32 bits, qword = 64 bits...
+    textSection.body << INDENT << "mov dword " << (dereference ? "[" : "") << scopes::regToStr(reg) << (dereference ? "]" : "") << ", " << number << " ; Pushing number on the stack" << ENDL;
   }
 
   void generateAsmCode(std::ostream &asmCode) {
