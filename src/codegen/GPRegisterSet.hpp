@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <optional>
 
 #include "ast/scopes/registers.hpp"
 #include "dbg/errors.hpp"
