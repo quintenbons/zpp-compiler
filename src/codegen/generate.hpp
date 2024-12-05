@@ -76,7 +76,7 @@ public:
     std::visit([this](auto &&arg) {
       using T = std::decay_t<decltype(arg)>;
       if constexpr (std::is_same_v<T, scopes::LocalStackOffset>) {
-        textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_ESP) << ", " << arg._byteOffset << " ; Creating space on the stack" << ENDL;
+        textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_RSP) << ", " << arg._byteOffset << " ; Creating space on the stack" << ENDL;
       }
       else if constexpr (std::is_same_v<T, scopes::GlobalStackOffset>) {
         THROW("Global stack offset not yet implemented");

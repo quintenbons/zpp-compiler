@@ -48,18 +48,18 @@ public:
   inline void debug(size_t depth) const {
     logNode(depth, fullName());
     if (description)
-      logDecoration(depth+1, "TypeDescription: ", description->name, " ; Size: ", description->bit_size, " ; Id: ", description->id);
+      logDecoration(depth+1, "TypeDescription: ", description->name, " ; Size: ", description->byteSize, " ; Id: ", description->id);
   }
 
-  inline scopes::bitSize_t getTypeBitSize() const {
-    if (description) return description->bit_size;
+  inline scopes::byteSize_t getTypeByteSize() const {
+    if (description) return description->byteSize;
     THROW("TypeDescription not set");
   }
 
 private:
   std::string_view name;
   int pointerDepth;
-  std::shared_ptr<scopes::TypeDescription> description;
+  const scopes::TypeDescription *description;
 };
 
 class NumberLiteral : public interface::AstNode<NumberLiteral>
@@ -75,12 +75,12 @@ public:
     logNode(depth, number);
   }
 
-  void loadValueInRegister(codegen::NasmGenerator_x86_64 &_evaluator, scopes::Register targetRegister) const {
-    _evaluator.pushNumber(number, targetRegister);
+  void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator, scopes::Register targetRegister) const {
+    generator.pushNumber(number, targetRegister);
   }
 
-  void loadValueOnStack(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    _evaluator.pushNumber(number, scopes::Register::REG_ESP, true);
+  void loadValueOnStack(codegen::NasmGenerator_x86_64 &generator) const {
+    generator.pushNumber(number, scopes::Register::REG_ESP, true);
   }
 
   inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
@@ -135,8 +135,8 @@ public:
     std::visit([&scopeStack, &scope](auto &node) { node.decorate(scopeStack, scope); }, expr);
   }
 
-  void loadValueInRegister(codegen::NasmGenerator_x86_64 &_evaluator, scopes::Register targetRegister) const {
-    std::visit( [&_evaluator, targetRegister](auto &&expr) { expr.loadValueInRegister(_evaluator, targetRegister); }, expr);
+  void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator, scopes::Register targetRegister) const {
+    std::visit( [&generator, targetRegister](auto &&expr) { expr.loadValueInRegister(generator, targetRegister); }, expr);
   }
 
 private:
@@ -158,17 +158,18 @@ public:
 
   inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
     type.decorate(scopeStack, scope);
-    description = scopeStack.addLocalVariable(name, type.getTypeBitSize());
+    scopeStack.addLocalVariable(name, type.getTypeByteSize());
+    description = scope.findVariable(name);
   }
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    _evaluator.emitDeclaration(description->location);
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    generator.emitDeclaration(description->location);
   }
 
 private:
   Type type;
   std::string_view name;
-  std::shared_ptr<scopes::VariableDescription> description;
+  const scopes::VariableDescription *description;
 };
 
 class ReturnStatement : public interface::AstNode<ReturnStatement> {
@@ -187,9 +188,9 @@ public:
     expression.decorate(scopeStack, scope);
   }
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    expression.loadValueInRegister(_evaluator, scopes::returnRegister);
-    _evaluator.emitReturnInstruction();
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    expression.loadValueInRegister(generator, scopes::returnRegister);
+    generator.emitReturnInstruction();
   }
 
 private:
@@ -223,20 +224,20 @@ public:
     asmBlock.decorate(scopeStack, scope);
   }
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    _evaluator << ";-- START -- asm binding requests" << ENDL;
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    generator << ";-- START -- asm binding requests" << ENDL;
     // TODO: not assume that every variable is always in rdx
 
     for (auto &request : requests) {
-      _evaluator << INDENT
+      generator << INDENT
          << std::format("mov {}, {}", regToStr(request.registerTo),
                           regToStr(Register::REG_RAX))
          << ENDL;
     }
 
-    _evaluator << ";-- START -- user defined" << ENDL;
-    _evaluator << asmBlock.getContent() << ENDL;
-    _evaluator << ";-- END -- user defined" << ENDL;
+    generator << ";-- START -- user defined" << ENDL;
+    generator << asmBlock.getContent() << ENDL;
+    generator << ";-- END -- user defined" << ENDL;
   }
 
 
@@ -393,11 +394,11 @@ public:
     body.decorate(scopeStack, scope);
   }
 
-  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &_evaluator) const {
-    _evaluator.emitGlobalDirective(name);
-    _evaluator.emitFunctionLabel(name);
-    body.genAsm_x86_64(_evaluator);
-    _evaluator.emitReturnInstruction();
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    generator.emitGlobalDirective(name);
+    generator.emitFunctionLabel(name);
+    body.genAsm_x86_64(generator);
+    generator.emitReturnInstruction();
   };
 
 private:
