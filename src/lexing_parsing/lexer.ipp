@@ -52,6 +52,7 @@ namespace keywords
     \
     X(TT_K_ASM, "TT_K_ASM") \
     \
+    X(TT_EQUAL, "TT_EQUAL") \
     X(TT_PLUS, "TT_PLUS") \
     X(TT_MINUS, "TT_MINUS") \
     X(TT_STAR, "TT_STAR") \
@@ -152,6 +153,7 @@ public:
       if (std::isdigit(current)) return number();
       if (std::isalpha(current)) return identifier();
 
+      if (current == '=') return createToken(TT_EQUAL, std::string_view(_content.data()+_pos++, 1));
       if (current == '+') return createToken(TT_PLUS, std::string_view(_content.data()+_pos++, 1));
       if (current == '-') return createToken(TT_MINUS, std::string_view(_content.data()+_pos++, 1));
       if (current == '*') return createToken(TT_STAR, std::string_view(_content.data()+_pos++, 1));

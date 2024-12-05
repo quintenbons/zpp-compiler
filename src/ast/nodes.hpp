@@ -17,6 +17,7 @@
 #include "dbg/errors.hpp"
 #include "scopes/scopeStack.hpp"
 #include "scopes/types.hpp"
+#include "ast/litteralTypes.hpp"
 
 namespace ast {
 
@@ -51,8 +52,8 @@ public:
       logDecoration(depth+1, "TypeDescription: ", description->name, " ; Size: ", description->byteSize, " ; Id: ", description->id);
   }
 
-  inline scopes::byteSize_t getTypeByteSize() const {
-    if (description) return description->byteSize;
+  inline const scopes::TypeDescription *getTypeDescription() const {
+    if (description) return description;
     THROW("TypeDescription not set");
   }
 
@@ -62,25 +63,53 @@ private:
   const scopes::TypeDescription *description;
 };
 
+class Variable : public interface::AstNode<Variable>
+{
+public:
+  static constexpr const char *node_name = "Node_Variable";
+
+public:
+  Variable(std::string_view &&name): name(name) {}
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    (void) scopeStack;
+    description = scope.findVariable(name);
+  }
+
+  inline void debug(size_t depth) const {
+    logNode(depth, name);
+    if (description)
+      logDecoration(depth+1, "VariableDescription: Id: ", description->variableId);
+  }
+
+  inline std::string_view getName() const {
+    return name;
+  }
+
+  inline const scopes::VariableDescription *getVariableDescription() const {
+    if (description) return description;
+    THROW("VariableDescription not set");
+  }
+
+private:
+  std::string_view name;
+  const scopes::VariableDescription *description;
+};
+
 class NumberLiteral : public interface::AstNode<NumberLiteral>
 {
 public:
   static constexpr const char *node_name = "Node_NumberLiteral";
-  using UnderlyingT = uint64_t;
 
 public:
-  NumberLiteral(UnderlyingT number): number(number) {}
+  NumberLiteral(NumberLitteralUnderlyingType number): number(number) {}
 
   inline void debug(size_t depth) const {
     logNode(depth, number);
   }
 
   void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator, scopes::Register targetRegister) const {
-    generator.pushNumber(number, targetRegister);
-  }
-
-  void loadValueOnStack(codegen::NasmGenerator_x86_64 &generator) const {
-    generator.pushNumber(number, scopes::Register::REG_ESP, true);
+    generator.emitLoadNumberLitteral(targetRegister, number);
   }
 
   inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
@@ -89,7 +118,7 @@ public:
   }
 
 private:
-  UnderlyingT number;
+  NumberLitteralUnderlyingType number;
 };
 
 class StringLiteral : public interface::AstNode<StringLiteral> {
@@ -148,28 +177,35 @@ public:
   static constexpr const char *node_name = "Node_Declaration";
 
 public:
-  Declaration(Type &&type, std::string_view name): type(std::move(type)), name(name) {}
+  Declaration(Type &&type, Variable &&variable): type(std::move(type)), variable(variable) {}
+  Declaration(Type &&type, Variable &&variable, Expression &&assignment): type(std::move(type)), variable(variable), assignment(std::move(assignment)) {}
 
   inline void debug(size_t depth) const {
-    logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
-    if (description)
-      logDecoration(depth+1, "VariableDescription: Id: ", description->variableId);
+    logNode(depth, "Type: ", type.fullName(), " ; Assignment: ", assignment.has_value());
+    variable.debug(depth + 1);
+    if (assignment.has_value()) {
+      assignment->debug(depth + 1);
+    }
   }
 
   inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
     type.decorate(scopeStack, scope);
-    scopeStack.addLocalVariable(name, type.getTypeByteSize());
-    description = scope.findVariable(name);
+    scopeStack.addLocalVariable(variable.getName(), type.getTypeDescription());
+    variable.decorate(scopeStack, scope);
   }
 
   void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
-    generator.emitDeclaration(description->location);
+    generator.emitDeclaration(variable.getVariableDescription()->location);
+    if (assignment.has_value()) {
+      assignment->loadValueInRegister(generator, scopes::Register::REG_RAX);
+      generator.emitStoreInMemory(variable.getVariableDescription()->location, scopes::Register::REG_RAX);
+    }
   }
 
 private:
   Type type;
-  std::string_view name;
-  const scopes::VariableDescription *description;
+  Variable variable;
+  std::optional<Expression> assignment;
 };
 
 class ReturnStatement : public interface::AstNode<ReturnStatement> {

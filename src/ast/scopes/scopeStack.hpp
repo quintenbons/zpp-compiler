@@ -94,14 +94,14 @@ public:
     for (auto &scope: _scopes) scope.logDebug();
   }
 
-  void addLocalVariable(const std::string_view &name, const byteSize_t &size)
+  void addLocalVariable(const std::string_view &name, const TypeDescription* type)
   {
-    // Let's say size = 32bits for now
-    _stackOffset += size;
+    _stackOffset += type->byteSize;
     std::unique_ptr<VariableDescription> description = std::make_unique<VariableDescription>(VariableDescription{
       .variableId=_variableId++,
       .name=name,
-      .location=LocalStackOffset{size, _stackOffset},
+      .location=LocalStackOffset{type->byteSize, _stackOffset},
+      .typeDescription=type,
     });
     _scopes.back().addVariable(std::move(description));
   }

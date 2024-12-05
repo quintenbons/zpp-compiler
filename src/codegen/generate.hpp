@@ -4,6 +4,7 @@
 #include "ast/scopes/types.hpp"
 #include "ast/scopes/registers.hpp"
 #include "ast/scopes/memory_x86_64.hpp"
+#include "ast/litteralTypes.hpp"
 
 namespace codegen
 {
@@ -76,7 +77,7 @@ public:
     std::visit([this](auto &&arg) {
       using T = std::decay_t<decltype(arg)>;
       if constexpr (std::is_same_v<T, scopes::LocalStackOffset>) {
-        textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_RSP) << ", " << arg._byteOffset << " ; Creating space on the stack" << ENDL;
+        textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_RSP) << ", " << arg._byteSize << " ; Creating space on the stack" << ENDL;
       }
       else if constexpr (std::is_same_v<T, scopes::GlobalStackOffset>) {
         THROW("Global stack offset not yet implemented");
@@ -90,9 +91,26 @@ public:
     }, location);
   }
 
-  void pushNumber(const /*ast::NumberLiteral::UnderlyingT*/ uint64_t &number, const scopes::Register &reg, const bool dereference = false) {
-    // TODO: dword = 32 bits, qword = 64 bits...
-    textSection.body << INDENT << "mov dword " << (dereference ? "[" : "") << scopes::regToStr(reg) << (dereference ? "]" : "") << ", " << number << " ; Pushing number on the stack" << ENDL;
+  void emitStoreInMemory(const scopes::LocationDescription &location, const scopes::Register &reg) {
+    std::visit([this, &reg](auto &&arg) {
+      using T = std::decay_t<decltype(arg)>;
+      if constexpr (std::is_same_v<T, scopes::LocalStackOffset>) {
+        textSection.body << INDENT << "mov [rbp-" << arg._byteOffset << "], " << scopes::regToStr(reg) << " ; Storing value in memory" << ENDL;
+      }
+      else if constexpr (std::is_same_v<T, scopes::GlobalStackOffset>) {
+        THROW("Global stack offset not yet implemented");
+      }
+      else if constexpr (std::is_same_v<T, scopes::Register>) {
+        THROW("Register declaration not yet implemented");
+      }
+      else {
+        THROW("Unknown location description type");
+      }
+    }, location);
+  }
+
+  void emitLoadNumberLitteral(const scopes::Register &reg, const ast::NumberLitteralUnderlyingType &value) {
+    textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", " << value << " ; Loading number litteral" << ENDL;
   }
 
   void generateAsmCode(std::ostream &asmCode) {

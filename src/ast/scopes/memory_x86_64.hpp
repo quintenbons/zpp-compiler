@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <variant>
 #include <string>
+#include <optional>
 
 #include "registers.hpp"
 
@@ -40,6 +41,7 @@ struct VariableDescription
   variableId_t variableId;
   std::string_view name;
   LocationDescription location;
+  std::optional<const TypeDescription*> typeDescription;
 };
 
 }

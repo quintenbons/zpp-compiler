@@ -8,6 +8,7 @@
 #include "ast/nodes.hpp"
 #include "dbg/errors.hpp"
 #include "dbg/utils.hpp"
+#include "ast/litteralTypes.hpp"
 
 namespace parser
 {
@@ -223,7 +224,7 @@ private:
   ast::NumberLiteral parseNumberLiteral()
   {
     auto numberView = match(TT_NUMBER);
-    ast::NumberLiteral::UnderlyingT number = utils::readNumber<ast::NumberLiteral::UnderlyingT>(numberView);
+    ast::NumberLitteralUnderlyingType number = utils::readNumber<ast::NumberLitteralUnderlyingType>(numberView);
     return ast::NumberLiteral(number);
   }
 
@@ -298,7 +299,16 @@ private:
   {
     ast::Type type = parseType();
     std::string_view name = match(TT_IDENT);
-    return ast::Declaration(std::move(type), std::move(name));
+    if (_currentToken.type == TT_EQUAL)
+    {
+      match(TT_EQUAL);
+      auto expression = parseExpression();
+      return ast::Declaration(std::move(type), ast::Variable(std::move(name)), std::move(expression));
+    }
+    else 
+    {
+      return ast::Declaration(std::move(type), ast::Variable(std::move(name)));
+    }
   }
 
   ast::InstructionList parseCodeBlock()
