@@ -21,22 +21,30 @@ class Scope
 public:
   Scope(scopeId_t scopeId, Scope *parent): _id{scopeId}, _parent{parent} {}
 
-  void addType(const std::shared_ptr<TypeDescription> &description)
+  void addType(std::unique_ptr<TypeDescription> &&description)
   {
-    _types.insert({description->name, description});
+    _types.emplace(description->name, std::move(description));
   }
 
-  void addVariable(const std::shared_ptr<VariableDescription> &description)
+  void addVariable(std::unique_ptr<VariableDescription> &&description)
   {
-    _variables.insert({description->name, description});
+    _variables.emplace(description->name, std::move(description));
   }
 
-  const std::shared_ptr<TypeDescription> findType(std::string_view name)
+  const TypeDescription* findType(std::string_view name)
   {
     auto typeDescription = _types.find(name);
-    if (typeDescription != _types.end()) return typeDescription->second;
+    if (typeDescription != _types.end()) return typeDescription->second.get();
     if (!_parent) THROW("Type not found: " << name << " in scope " << _id);
     return _parent->findType(name);
+  }
+
+  const VariableDescription* findVariable(std::string_view name)
+  {
+    auto variableDescription = _variables.find(name);
+    if (variableDescription != _variables.end()) return variableDescription->second.get();
+    if (!_parent) THROW("Variable not found: " << name << " in scope " << _id);
+    return _parent->findVariable(name);
   }
 
   void logDebug()
@@ -45,7 +53,7 @@ public:
     ss << "[Scope] id=" << _id << " ; parent=" << (_parent ? _parent->_id : 0);
     for (auto &[name, description]: _types)
     {
-      ss << "\n  [Type] id=" << description->id << " ; name=" << description->name << " ; size=" << description->bit_size;
+      ss << "\n  [Type] id=" << description->id << " ; name=" << description->name << " ; size=" << description->byteSize;
     }
     for (auto &[name, description]: _variables)
     {
@@ -58,8 +66,8 @@ public:
 private:
   scopeId_t _id;
   Scope *_parent; // TODO think about relacing this with a scope id
-  std::map<std::string_view, const std::shared_ptr<TypeDescription>> _types;
-  std::map<std::string_view, const std::shared_ptr<VariableDescription>> _variables; // TODO lvalues?
+  std::map<std::string_view, const std::unique_ptr<TypeDescription>> _types;
+  std::map<std::string_view, const std::unique_ptr<VariableDescription>> _variables; // TODO lvalues?
 };
 
 class ScopeStack
@@ -74,7 +82,7 @@ public:
 
     for (const TypeDescription &description: _types)
     {
-      rootScope.addType(std::make_shared<TypeDescription>(description));
+      rootScope.addType(std::make_unique<TypeDescription>(description));
     }
   }
 
@@ -86,17 +94,16 @@ public:
     for (auto &scope: _scopes) scope.logDebug();
   }
 
-  const std::shared_ptr<VariableDescription> addLocalVariable(const std::string_view &name, const bitSize_t &size)
+  void addLocalVariable(const std::string_view &name, const byteSize_t &size)
   {
     // Let's say size = 32bits for now
-    _stackOffset += 4;
-    const std::shared_ptr<VariableDescription> description = std::make_shared<VariableDescription>(VariableDescription{
+    _stackOffset += size;
+    std::unique_ptr<VariableDescription> description = std::make_unique<VariableDescription>(VariableDescription{
       .variableId=_variableId++,
       .name=name,
       .location=LocalStackOffset{size, _stackOffset},
     });
-    _scopes.back().addVariable(description);
-    return description;
+    _scopes.back().addVariable(std::move(description));
   }
 
 private:
