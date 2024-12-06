@@ -60,9 +60,10 @@ public:
 private:
   std::string_view name;
   int pointerDepth;
-  const scopes::TypeDescription *description;
+  const scopes::TypeDescription *description = nullptr;
 };
 
+// TODO Variable as parameter
 class Variable : public interface::AstNode<Variable>
 {
 public:
@@ -91,9 +92,15 @@ public:
     THROW("VariableDescription not set");
   }
 
+  inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator, scopes::Register targetRegister) const {
+    (void) generator;
+    (void) targetRegister;
+    THROW("variable loadValueInRegister Not implemented");
+  }
+
 private:
   std::string_view name;
-  const scopes::VariableDescription *description;
+  const scopes::VariableDescription *description = nullptr;
 };
 
 class NumberLiteral : public interface::AstNode<NumberLiteral>
@@ -149,7 +156,9 @@ class Expression : public interface::AstNode<Expression> {
 public:
   static constexpr const char *node_name = "Node_Expression";
   using ExpressionVariant = std::variant<
-    NumberLiteral
+    NumberLiteral,
+    Variable
+    // FunctionCall
   >;
 
 public:
@@ -172,6 +181,40 @@ private:
   ExpressionVariant expr;
 };
 
+class FunctionCall : public interface::AstNode<FunctionCall> {
+public:
+  static constexpr const char *node_name = "Node_FunctionCall";
+
+public:
+  FunctionCall(std::string_view name, std::vector<Expression> &&arguments): name(name), arguments(std::move(arguments)) {}
+
+  inline void debug(size_t depth) const {
+    logNode(depth, name, " ; ArgumentCount: ", arguments.size());
+    for (const auto &arg : arguments) {
+      arg.debug(depth + 1);
+    }
+  }
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+    (void) scopeStack;
+    (void) scope;
+  }
+
+  void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    (void) generator;
+  }
+
+  inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator, scopes::Register targetRegister) const {
+    (void) generator;
+    (void) targetRegister;
+    THROW("FunctionCall loadValueInRegister Not implemented");
+  }
+
+private:
+  std::string_view name;
+  std::vector<Expression> arguments;
+};
+
 class Declaration : public interface::AstNode<Declaration> {
 public:
   static constexpr const char *node_name = "Node_Declaration";
@@ -190,7 +233,7 @@ public:
 
   inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
     type.decorate(scopeStack, scope);
-    scopeStack.addLocalVariable(variable.getName(), type.getTypeDescription());
+    scopeStack.addLocalVariable(variable.getName(), type.getTypeDescription(), scope);
     variable.decorate(scopeStack, scope);
   }
 
@@ -357,6 +400,10 @@ public:
     type.decorate(scopeStack, scope);
   }
 
+  inline const scopes::TypeDescription *getTypeDescription() const {
+    return type.getTypeDescription();
+  }
+
 private:
   Type type;
   std::string_view name;
@@ -404,6 +451,9 @@ public:
 
   inline auto size() const { return parameters.size(); }
 
+  inline std::vector<FunctionParameter>::iterator begin() { return parameters.begin(); }
+  inline std::vector<FunctionParameter>::iterator end() { return parameters.end(); }
+
 private:
   std::vector<FunctionParameter> parameters;
 };
@@ -422,18 +472,33 @@ public:
     returnType.debug(depth + 1);
     params.debug(depth + 1);
     body.debug(depth + 1);
+    if (description)
+      logDecoration(depth + 1, "FunctionDescription: ", description->name, " ; Id: ", description->functionId);
   }
 
   inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
-    returnType.decorate(scopeStack, scope);
-    params.decorate(scopeStack, scope);
-    body.decorate(scopeStack, scope);
+    scopes::Scope &newScope = scopeStack.createChildScope(&scope);
+    returnType.decorate(scopeStack, newScope);
+    params.decorate(scopeStack, newScope);
+    body.decorate(scopeStack, newScope);
+
+    std::vector<const scopes::TypeDescription*> paramTypes;
+    for (auto &param : params) {
+      paramTypes.push_back(param.getTypeDescription());
+    }
+    scopeStack.addFunction(name, paramTypes, returnType.getTypeDescription(), scope);
+    description = scope.findFunction(name);
   }
 
   void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
     generator.emitGlobalDirective(name);
     generator.emitFunctionLabel(name);
+
+    generator.emitSaveBasePointer();
+    generator.emitSetBasePointerToCurrentStackPointer();
     body.genAsm_x86_64(generator);
+    generator.emitRestoreBasePointer();
+
     generator.emitReturnInstruction();
   };
 
@@ -442,6 +507,7 @@ private:
   std::string_view name;
   FunctionParameterList params;
   InstructionList body;
+  const scopes::FunctionDescription *description = nullptr;
 };
 
 class Method : public interface::AstNode<Method> {
@@ -606,6 +672,7 @@ private:
 #define PURE_NODE_LIST                                                         \
   Y(Type)                                                                      \
   Y(Declaration)                                                               \
+  Y(FunctionCall)                                                              \
   Y(NumberLiteral)                                                             \
   Y(StringLiteral)                                                             \
   Y(ReturnStatement)                                                           \

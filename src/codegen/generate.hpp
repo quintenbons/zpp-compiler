@@ -60,8 +60,22 @@ public:
     textSection.preBody << INDENT << "syscall                      ; Make the syscall" << ENDL;
   }
 
+  void emitSaveBasePointer() {
+    textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_RBP) << ", 8 ; Save the base pointer" << ENDL;
+    textSection.body << INDENT << "mov [rbp], rbp ; Save the base pointer" << ENDL;
+  }
+
+  void emitSetBasePointerToCurrentStackPointer() {
+    textSection.body << INDENT << "mov " << scopes::regToStr(scopes::Register::REG_RBP) << ", " << scopes::regToStr(scopes::Register::REG_RSP) << " ; Set base pointer to current stack pointer" << ENDL;
+  }
+
   void emitGlobalDirective(const std::string_view &name) {
     textSection.globalDeclarations << INDENT << "global " << name << ":function" << ENDL;
+  }
+
+  void emitRestoreBasePointer() {
+    textSection.body << INDENT << "mov rbp, [rbp] ; Restore the base pointer" << ENDL;
+    textSection.body << INDENT << "add " << scopes::regToStr(scopes::Register::REG_RBP) << ", 8 ; Restore the base pointer" << ENDL;
   }
 
   void emitFunctionLabel(const std::string_view &name) {

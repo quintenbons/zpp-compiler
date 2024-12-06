@@ -38,10 +38,18 @@ using LocationDescription = std::variant<
 
 struct VariableDescription
 {
-  variableId_t variableId;
+  id_t variableId;
   std::string_view name;
   LocationDescription location;
   std::optional<const TypeDescription*> typeDescription;
+};
+
+struct FunctionDescription
+{
+  id_t functionId;
+  std::string_view name;
+  std::vector<const TypeDescription*> parameters;
+  const TypeDescription* returnType;
 };
 
 }

@@ -230,6 +230,21 @@ private:
 
   ast::Expression parseExpression()
   {
+    if (_currentToken.type == TT_IDENT)
+    {
+      std::string_view ident = match(TT_IDENT);
+      // if (_currentToken.type == TT_LPAR)
+      // {
+      //   ast::FunctionCall functionCall = parseFunctionCall();
+      //   return ast::Expression(std::move(functionCall));
+      // }
+      // else
+      // {
+      //   return ast::Expression(ast::Variable(std::move(ident)));
+      // }
+      return ast::Expression(ast::Variable(std::move(ident)));
+    }
+
     auto numberLiteral = parseNumberLiteral();
     return ast::Expression(std::move(numberLiteral));
   }
@@ -309,6 +324,21 @@ private:
     {
       return ast::Declaration(std::move(type), ast::Variable(std::move(name)));
     }
+  }
+
+  ast::FunctionCall parseFunctionCall()
+  {
+    std::string_view name = match(TT_IDENT);
+    match(TT_LPAR);
+    std::vector<ast::Expression> arguments;
+    while (_currentToken.type != TT_RPAR)
+    {
+      arguments.push_back(parseExpression());
+      // TODO: how do we know the expression will end?
+      match(TT_COMMA);
+    }
+    match(TT_RPAR);
+    return ast::FunctionCall(name, std::move(arguments));
   }
 
   ast::InstructionList parseCodeBlock()
