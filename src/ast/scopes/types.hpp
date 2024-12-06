@@ -7,13 +7,12 @@
 namespace scopes
 {
 
-using typeId_t = uint32_t;
-using variableId_t = uint32_t;
+using id_t = uint32_t;
 using byteSize_t = uint32_t;
 
 struct TypeDescription
 {
-  typeId_t id;
+  id_t id;
   byteSize_t byteSize;
   std::string name;
 };
