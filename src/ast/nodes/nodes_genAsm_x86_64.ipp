@@ -1,0 +1,97 @@
+#include <format>
+#include <sstream>
+#include <variant>
+
+#include "ast/scopes/registers.hpp"
+#include "codegen/generate.hpp"
+#include "dbg/errors.hpp"
+
+#include "nodes.h"
+
+namespace ast {
+namespace {
+static constexpr auto ENDL = codegen::NasmGenerator_x86_64::ENDL;
+static constexpr auto INDENT = codegen::NasmGenerator_x86_64::INDENT;
+} // namespace
+
+inline void Instruction::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &evaluator) const {
+  std::visit([&evaluator](const auto &node) { node.genAsm_x86_64(evaluator); },
+             instr);
+}
+
+inline void InstructionList::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &evaluator) const {
+  for (const auto &instr : instructions) {
+    instr.genAsm_x86_64(evaluator);
+  }
+}
+
+inline void FunctionCall::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  (void)generator;
+}
+
+inline void ReturnStatement::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  expression.loadValueInRegister(generator, scopes::returnRegister);
+  generator.emitReturnInstruction();
+}
+
+inline void InlineAsmStatement::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  generator << ";-- START -- asm binding requests" << ENDL;
+  // TODO: not assume that every variable is always in rdx
+
+  for (auto &request : requests) {
+    generator << INDENT
+              << std::format("mov {}, {}", regToStr(request.registerTo),
+                             regToStr(Register::REG_RAX))
+              << ENDL;
+  }
+
+  generator << ";-- START -- user defined" << ENDL;
+  generator << asmBlock.getContent() << ENDL;
+  generator << ";-- END -- user defined" << ENDL;
+}
+
+inline void Declaration::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  generator.emitDeclaration(variable.getVariableDescription()->location);
+  if (assignment.has_value()) {
+    assignment->loadValueInRegister(generator, scopes::Register::REG_RAX);
+    generator.emitStoreInMemory(variable.getVariableDescription()->location,
+                                scopes::Register::REG_RAX);
+  }
+}
+
+inline void Function::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  generator.emitGlobalDirective(name);
+  generator.emitFunctionLabel(name);
+
+  generator.emitSaveBasePointer();
+  generator.emitSetBasePointerToCurrentStackPointer();
+  body.genAsm_x86_64(generator);
+  generator.emitRestoreBasePointer();
+
+  generator.emitReturnInstruction();
+}
+
+inline std::string
+TranslationUnit::genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
+  for (auto &func : functions) {
+    func.genAsm_x86_64(evaluator);
+  }
+
+  for (auto &classNode : classes) {
+    (void)classNode;
+    TODO("Implement classNodes");
+  }
+
+  std::stringstream asmCode;
+  evaluator.generateAsmCode(asmCode);
+
+  return asmCode.str();
+}
+
+} /* namespace ast */
