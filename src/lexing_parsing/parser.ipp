@@ -5,7 +5,7 @@
 
 #include "ast/scopes/registers.hpp"
 #include "lexer.ipp"
-#include "ast/nodes.hpp"
+#include "ast/nodes/nodes.h"
 #include "dbg/errors.hpp"
 #include "dbg/utils.hpp"
 #include "ast/litteralTypes.hpp"

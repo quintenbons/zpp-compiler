@@ -17,7 +17,10 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/main.cpp
   ${SRC_DIR}/lexing_parsing/lexer.ipp
   ${SRC_DIR}/lexing_parsing/parser.ipp
-  ${SRC_DIR}/ast/nodes.hpp
+  ${SRC_DIR}/ast/nodes/nodes.h
+  ${SRC_DIR}/ast/nodes/nodes_debug.cpp
+  ${SRC_DIR}/ast/nodes/nodes_decorate.cpp
+  ${SRC_DIR}/ast/nodes/nodes_genAsm_x86_64.cpp
   ${SRC_DIR}/ast/scopes/scopeStack.hpp
   ${SRC_DIR}/ast/scopes/types.hpp
   ${SRC_DIR}/ast/scopes/memory_x86_64.hpp

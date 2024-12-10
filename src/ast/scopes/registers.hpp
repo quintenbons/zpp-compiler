@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "dbg/errors.hpp"
+#include "dbg/utils.hpp"
 
 namespace scopes
 {

@@ -2,7 +2,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "ast/nodes.hpp"
+#include "ast/nodes/nodes.h"
 #include "codegen/generate.hpp"
 #include "dbg/errors.hpp"
 #include "dbg/iohelper.hpp"
