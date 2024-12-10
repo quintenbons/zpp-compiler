@@ -8,6 +8,9 @@
 #include "dbg/argparse.hpp"
 #include "dbg/errors.hpp"
 #include "dbg/iohelper.hpp"
+#include "ast/nodes/nodes_debug.ipp"
+#include "ast/nodes/nodes_decorate.ipp"
+#include "ast/nodes/nodes_genAsm_x86_64.ipp"
 
 static inline int fullDebugExec(argparse::CompilerOptions &options) {
   static constexpr const char *asmFilePath = "./a.asm";
