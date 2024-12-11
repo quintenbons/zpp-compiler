@@ -233,15 +233,15 @@ private:
     if (_currentToken.type == TT_IDENT)
     {
       std::string_view ident = match(TT_IDENT);
-      // if (_currentToken.type == TT_LPAR)
-      // {
-      //   ast::FunctionCall functionCall = parseFunctionCall();
-      //   return ast::Expression(std::move(functionCall));
-      // }
-      // else
-      // {
-      //   return ast::Expression(ast::Variable(std::move(ident)));
-      // }
+      if (_currentToken.type == TT_LPAR)
+      {
+        ast::FunctionCall functionCall = parseFunctionCall(ident);
+        return ast::Expression(std::move(functionCall));
+      }
+      else
+      {
+        return ast::Expression(ast::Variable(std::move(ident)));
+      }
       return ast::Expression(ast::Variable(std::move(ident)));
     }
 
@@ -297,7 +297,8 @@ private:
         return ast::Instruction(parseReturnStatement());
       case lexer::TT_K_ASM:
         return ast::Instruction(parseInlineAsmStatement());
-
+      case lexer::TT_IDENT:
+        return ast::Instruction(parseExpression());
       /* case lexer::TT_K_INT: return ast::Instruction(...); */
       /* case lexer::TT_K_VOID: return ast::Instruction(...); */
       /* ... */
@@ -326,16 +327,16 @@ private:
     }
   }
 
-  ast::FunctionCall parseFunctionCall()
+  ast::FunctionCall parseFunctionCall(std::string_view name)
   {
-    std::string_view name = match(TT_IDENT);
     match(TT_LPAR);
     std::vector<ast::Expression> arguments;
     while (_currentToken.type != TT_RPAR)
     {
       arguments.push_back(parseExpression());
       // TODO: how do we know the expression will end?
-      match(TT_COMMA);
+      if (_currentToken.type != TT_RPAR)
+        match(TT_COMMA);
     }
     match(TT_RPAR);
     return ast::FunctionCall(name, std::move(arguments));

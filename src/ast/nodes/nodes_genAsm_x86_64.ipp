@@ -29,13 +29,19 @@ inline void InstructionList::genAsm_x86_64(
 
 inline void FunctionCall::genAsm_x86_64(
     codegen::NasmGenerator_x86_64 &generator) const {
-  (void)generator;
+  size_t maxArgumentsStoredInRegisters = std::min(arguments.size(), scopes::functionArgumentRegisters.size());
+  for (size_t i = 0; i < maxArgumentsStoredInRegisters; i++) {
+    arguments[i].loadValueInRegister(generator, scopes::functionArgumentRegisters[i]);
+  }
+  for (size_t i = maxArgumentsStoredInRegisters; i < arguments.size(); i++) {
+    // TODO: Push on the stack
+  }
+  generator.emitCall(name);
 }
 
 inline void ReturnStatement::genAsm_x86_64(
     codegen::NasmGenerator_x86_64 &generator) const {
   expression.loadValueInRegister(generator, scopes::returnRegister);
-  generator.emitReturnInstruction();
 }
 
 inline void InlineAsmStatement::genAsm_x86_64(
@@ -75,6 +81,10 @@ inline void Function::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) co
   generator.emitRestoreBasePointer();
 
   generator.emitReturnInstruction();
+}
+
+inline void Expression::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  std::visit([&generator](const auto &node) { node.genAsm_x86_64(generator); }, expr);
 }
 
 inline std::string

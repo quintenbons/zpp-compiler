@@ -177,6 +177,15 @@ enum class Register: uint32_t
 _COUNT
 };
 
+std::vector<Register> functionArgumentRegisters = {
+  Register::REG_RDI,
+  Register::REG_RSI,
+  Register::REG_RDX,
+  Register::REG_RCX,
+  Register::REG_R8,
+  Register::REG_R9,
+};
+
 enum class GeneralPurposeRegister: uint32_t {
 #define X(reg, str) reg,
 REGISTER_ID_64_LIST

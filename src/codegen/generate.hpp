@@ -87,6 +87,10 @@ public:
     textSection.body << INDENT << "ret" << ENDL;
   }
 
+  void emitCall(const std::string_view &name) {
+    textSection.body << INDENT << "call " << name << ENDL;
+  }
+
   void emitDeclaration(const scopes::LocationDescription &location) {
     std::visit([this](auto &&arg) {
       using T = std::decay_t<decltype(arg)>;
@@ -110,6 +114,24 @@ public:
       using T = std::decay_t<decltype(arg)>;
       if constexpr (std::is_same_v<T, scopes::LocalStackOffset>) {
         textSection.body << INDENT << "mov [rbp-" << arg._byteOffset << "], " << scopes::regToStr(reg) << " ; Storing value in memory" << ENDL;
+      }
+      else if constexpr (std::is_same_v<T, scopes::GlobalStackOffset>) {
+        THROW("Global stack offset not yet implemented");
+      }
+      else if constexpr (std::is_same_v<T, scopes::Register>) {
+        THROW("Register declaration not yet implemented");
+      }
+      else {
+        THROW("Unknown location description type");
+      }
+    }, location);
+  }
+
+  void emitLoadFromMemory(const scopes::Register &reg, const scopes::LocationDescription &location) {
+    std::visit([this, &reg](auto &&arg) {
+      using T = std::decay_t<decltype(arg)>;
+      if constexpr (std::is_same_v<T, scopes::LocalStackOffset>) {
+        textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", [rbp-" << arg._byteOffset << "] ; Loading value from memory" << ENDL;
       }
       else if constexpr (std::is_same_v<T, scopes::GlobalStackOffset>) {
         THROW("Global stack offset not yet implemented");
