@@ -1,7 +1,7 @@
 int main()
 {
   int a = 1;
-  int c = 1; //fn(a);
+  fn(a);
   return 1;
 }
 

@@ -19,6 +19,9 @@ enum class Visibility { Public, Protected, Private };
 constexpr Visibility allVisibilities[] = {
     Visibility::Public, Visibility::Protected, Visibility::Private};
 
+class Expression;
+class FunctionCall;
+
 class Type : public interface::AstNode<Type> {
 public:
   static constexpr const char *node_name = "Node_Type";
@@ -59,9 +62,7 @@ public:
 
   inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
                                   scopes::Register targetRegister) const {
-    (void)generator;
-    (void)targetRegister;
-    THROW("variable loadValueInRegister Not implemented");
+    generator.emitLoadFromMemory(targetRegister, getVariableDescription()->location);
   }
 
   inline std::string_view getName() const { return name; }
@@ -70,6 +71,11 @@ public:
     if (description)
       return description;
     THROW("VariableDescription not set");
+  }
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    (void)generator;
+    THROW("Variable genAsm_x86_64 should not be called");
   }
 
 private:
@@ -92,6 +98,11 @@ public:
     generator.emitLoadNumberLitteral(targetRegister, number);
   }
 
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    (void)generator;
+    THROW("NumberLiteral genAsm_x86_64 should not be called");
+  }
+
 private:
   NumberLitteralUnderlyingType number;
 };
@@ -109,35 +120,13 @@ public:
 
   std::string_view getContent() const { return content; }
 
-private:
-  std::string content;
-};
-
-class Expression : public interface::AstNode<Expression> {
-public:
-  static constexpr const char *node_name = "Node_Expression";
-  using ExpressionVariant = std::variant<NumberLiteral, Variable
-                                         // FunctionCall
-                                         >;
-
-public:
-  template <typename T> Expression(T &&expr) : expr(std::forward<T>(expr)) {}
-
-  inline void debug(size_t depth) const;
-
-  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
-
-  void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
-                           scopes::Register targetRegister) const {
-    std::visit(
-        [&generator, targetRegister](auto &&expr) {
-          expr.loadValueInRegister(generator, targetRegister);
-        },
-        expr);
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    (void)generator;
+    THROW("StringLiteral genAsm_x86_64 should not be called");
   }
 
 private:
-  ExpressionVariant expr;
+  std::string content;
 };
 
 class FunctionCall : public interface::AstNode<FunctionCall> {
@@ -165,6 +154,35 @@ private:
   std::string_view name;
   std::vector<Expression> arguments;
 };
+
+class Expression : public interface::AstNode<Expression> {
+public:
+  static constexpr const char *node_name = "Node_Expression";
+  using ExpressionVariant = std::variant<NumberLiteral, Variable, FunctionCall>;
+
+public:
+  template <typename T> Expression(T &&expr) : expr(std::forward<T>(expr)) {}
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
+                           scopes::Register targetRegister) const {
+    std::visit(
+        [&generator, targetRegister](auto &&expr) {
+          expr.loadValueInRegister(generator, targetRegister);
+        },
+        expr);
+  }
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+private:
+  ExpressionVariant expr;
+};
+
+
 
 class Declaration : public interface::AstNode<Declaration> {
 public:
@@ -237,7 +255,7 @@ class Instruction : public interface::AstNode<Instruction> {
 public:
   static constexpr const char *node_name = "Node_Instruction";
   using InstructionVariant =
-      std::variant<ReturnStatement, InlineAsmStatement, Declaration
+      std::variant<ReturnStatement, InlineAsmStatement, Declaration, Expression
                    // Definition,
                    >;
 

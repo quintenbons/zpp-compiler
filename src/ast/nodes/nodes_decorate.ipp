@@ -39,8 +39,9 @@ inline void Expression::decorate(scopes::ScopeStack &scopeStack,
 
 inline void FunctionCall::decorate(scopes::ScopeStack &scopeStack,
                             scopes::Scope &scope) {
-  (void)scopeStack;
-  (void)scope;
+  for (auto &arg : arguments) {
+    arg.decorate(scopeStack, scope);
+  }
 }
 
 inline void Declaration::decorate(scopes::ScopeStack &scopeStack,
