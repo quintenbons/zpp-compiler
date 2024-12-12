@@ -79,10 +79,12 @@ inline void InstructionList::decorate(scopes::ScopeStack &scopeStack,
 inline void FunctionParameter::decorate(scopes::ScopeStack &scopeStack,
                                  scopes::Scope &scope) {
   type.decorate(scopeStack, scope);
+  // variable.decorate(scopeStack, scope);
 }
 
 inline void Attribute::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
   type.decorate(scopeStack, scope);
+  // variable.decorate(scopeStack, scope);
 }
 
 inline void FunctionParameterList::decorate(scopes::ScopeStack &scopeStack,

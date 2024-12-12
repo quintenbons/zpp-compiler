@@ -48,7 +48,6 @@ private:
   const scopes::TypeDescription *description = nullptr;
 };
 
-// TODO Variable as parameter
 class Variable : public interface::AstNode<Variable> {
 public:
   static constexpr const char *node_name = "Node_Variable";
@@ -294,8 +293,8 @@ public:
   static constexpr const char *node_name = "Node_FunctionParameter";
 
 public:
-  FunctionParameter(Type &&type, std::string_view name)
-      : type(type), name(name) {}
+  FunctionParameter(Type &&type, Variable &&variable)
+      : type(type), variable(variable) {}
 
   inline void debug(size_t depth) const;
 
@@ -307,7 +306,7 @@ public:
 
 private:
   Type type;
-  std::string_view name;
+  Variable variable;
 };
 
 class Attribute : public interface::AstNode<Attribute> {
@@ -315,7 +314,7 @@ public:
   static constexpr const char *node_name = "Node_ClassAttribute";
 
 public:
-  Attribute(Type &&type, std::string_view name) : type(type), name(name) {}
+  Attribute(Type &&type, Variable &&variable) : type(type), variable(variable) {}
 
   inline void debug(size_t depth) const;
 
@@ -323,7 +322,7 @@ public:
 
 private:
   Type type;
-  std::string_view name;
+  Variable variable;
 };
 
 class FunctionParameterList : public interface::AstNode<FunctionParameterList> {

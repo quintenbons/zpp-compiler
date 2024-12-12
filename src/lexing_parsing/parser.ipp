@@ -156,7 +156,7 @@ private:
         methods.emplace_back(std::move(method), std::move(attribute_specifier));
       }
       else {
-        ast::Attribute attribute(std::move(type), name);
+        ast::Attribute attribute(std::move(type), ast::Variable(std::move(name)));
         attributes.emplace_back(std::move(attribute), std::move(attribute_specifier));
         match(TT_SEMI);
       }
@@ -173,7 +173,7 @@ private:
     std::string_view name{};
     if (_currentToken.type == TT_IDENT) name = match(TT_IDENT);
 
-    return ast::FunctionParameter(std::move(type), name);
+    return ast::FunctionParameter(std::move(type), ast::Variable(std::move(name)));
   }
 
   ast::FunctionParameterList parseFunctionParams()
