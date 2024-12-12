@@ -5,7 +5,7 @@
 #include <variant>
 #include <vector>
 
-#include "ast/litteralTypes.hpp"
+#include "ast/literalTypes.hpp"
 #include "ast/scopes/registers.hpp"
 #include "ast/scopes/scopeStack.hpp"
 #include "ast/scopes/types.hpp"
@@ -61,8 +61,9 @@ public:
   inline void debug(size_t depth) const;
 
   inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
-                                  scopes::Register targetRegister) const {
-    generator.emitLoadFromMemory(targetRegister, getVariableDescription()->location);
+                                  scopes::GeneralPurposeRegister targetRegister) const {
+    const scopes::byteSize_t size = (*getVariableDescription()->typeDescription)->byteSize;
+    generator.emitLoadFromMemory(scopes::getProperRegisterFromID64(targetRegister, size), getVariableDescription()->location);
   }
 
   inline std::string_view getName() const { return name; }
@@ -88,14 +89,14 @@ public:
   static constexpr const char *node_name = "Node_NumberLiteral";
 
 public:
-  NumberLiteral(NumberLitteralUnderlyingType number) : number(number) {}
+  NumberLiteral(NumberLiteralUnderlyingType number) : number(number) {}
 
   inline void debug(size_t depth) const;
   inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
 
   void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
-                           scopes::Register targetRegister) const {
-    generator.emitLoadNumberLitteral(targetRegister, number);
+                           scopes::GeneralPurposeRegister targetRegister) const {
+    generator.emitLoadNumberLiteral(scopes::getProperRegisterFromID64(targetRegister, NumberLiteralUnderlyingTypeSize), number);
   }
 
   inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
@@ -104,7 +105,7 @@ public:
   }
 
 private:
-  NumberLitteralUnderlyingType number;
+  NumberLiteralUnderlyingType number;
 };
 
 class StringLiteral : public interface::AstNode<StringLiteral> {
@@ -144,7 +145,7 @@ public:
   inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
 
   inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
-                                  scopes::Register targetRegister) const {
+                                  scopes::GeneralPurposeRegister targetRegister) const {
     (void)generator;
     (void)targetRegister;
     THROW("FunctionCall loadValueInRegister Not implemented");
@@ -168,7 +169,7 @@ public:
   inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
 
   void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
-                           scopes::Register targetRegister) const {
+                           scopes::GeneralPurposeRegister targetRegister) const {
     std::visit(
         [&generator, targetRegister](auto &&expr) {
           expr.loadValueInRegister(generator, targetRegister);
@@ -181,8 +182,6 @@ public:
 private:
   ExpressionVariant expr;
 };
-
-
 
 class Declaration : public interface::AstNode<Declaration> {
 public:
@@ -228,7 +227,6 @@ private:
 class InlineAsmStatement : public interface::AstNode<InlineAsmStatement> {
 public:
   static constexpr const char *node_name = "Node_InlineAsmStatement";
-  using Register = scopes::Register;
 
   struct BindingRequest {
     scopes::Register registerTo;

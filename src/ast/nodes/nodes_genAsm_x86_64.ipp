@@ -29,9 +29,9 @@ inline void InstructionList::genAsm_x86_64(
 
 inline void FunctionCall::genAsm_x86_64(
     codegen::NasmGenerator_x86_64 &generator) const {
-  size_t maxArgumentsStoredInRegisters = std::min(arguments.size(), scopes::functionArgumentRegisters.size());
+  size_t maxArgumentsStoredInRegisters = std::min(arguments.size(), scopes::FUNCTION_ARGUMENT_REGISTERS.size());
   for (size_t i = 0; i < maxArgumentsStoredInRegisters; i++) {
-    arguments[i].loadValueInRegister(generator, scopes::functionArgumentRegisters[i]);
+    arguments[i].loadValueInRegister(generator, scopes::FUNCTION_ARGUMENT_REGISTERS[i]);
   }
   for (size_t i = maxArgumentsStoredInRegisters; i < arguments.size(); i++) {
     // TODO: Push on the stack
@@ -52,7 +52,7 @@ inline void InlineAsmStatement::genAsm_x86_64(
   for (auto &request : requests) {
     generator << INDENT
               << std::format("mov {}, {}", regToStr(request.registerTo),
-                             regToStr(Register::REG_RAX))
+                             regToStr(scopes::Register::REG_RAX))
               << ENDL;
   }
 
@@ -65,9 +65,11 @@ inline void Declaration::genAsm_x86_64(
     codegen::NasmGenerator_x86_64 &generator) const {
   generator.emitDeclaration(variable.getVariableDescription()->location);
   if (assignment.has_value()) {
-    assignment->loadValueInRegister(generator, scopes::Register::REG_RAX);
+    // TODO: Take an available register
+    assignment->loadValueInRegister(generator, scopes::GeneralPurposeRegister::REG_RAX);
+    scopes::byteSize_t size = (*variable.getVariableDescription()->typeDescription)->byteSize;
     generator.emitStoreInMemory(variable.getVariableDescription()->location,
-                                scopes::Register::REG_RAX);
+                                 scopes::getProperRegisterFromID64(scopes::GeneralPurposeRegister::REG_RAX, size));
   }
 }
 
@@ -78,6 +80,7 @@ inline void Function::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) co
   generator.emitSaveBasePointer();
   generator.emitSetBasePointerToCurrentStackPointer();
   body.genAsm_x86_64(generator);
+  generator.emitRestoreStackPointer();
   generator.emitRestoreBasePointer();
 
   generator.emitReturnInstruction();
