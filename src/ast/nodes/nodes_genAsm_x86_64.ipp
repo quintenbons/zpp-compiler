@@ -34,7 +34,7 @@ inline void FunctionCall::genAsm_x86_64(
     arguments[i].loadValueInRegister(generator, scopes::FUNCTION_ARGUMENT_REGISTERS[i]);
   }
   for (size_t i = maxArgumentsStoredInRegisters; i < arguments.size(); i++) {
-    // TODO: Push on the stack
+    TODO("Implement pushing arguments on the stack");
   }
   generator.emitCall(name);
 }

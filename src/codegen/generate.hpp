@@ -90,7 +90,6 @@ public:
   }
 
   void emitCall(const std::string_view &name) {
-    textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_RSP) << ", 4 ; Aligning stack" << ENDL;
     textSection.body << INDENT << "call " << name << ENDL;
   }
 

@@ -77,11 +77,13 @@ inline void InstructionList::debug(size_t depth) const {
 }
 
 inline void FunctionParameter::debug(size_t depth) const {
-  logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
+  logNode(depth, "Type: ", type.fullName());
+  variable.debug(depth + 1);
 }
 
 inline void Attribute::debug(size_t depth) const {
-  logNode(depth, "Type: ", type.fullName(), " ; Name: ", name);
+  logNode(depth, "Type: ", type.fullName());
+  variable.debug(depth + 1);
 }
 
 inline void FunctionParameterList::debug(size_t depth) const {
