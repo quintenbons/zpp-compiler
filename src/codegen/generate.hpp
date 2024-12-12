@@ -4,7 +4,7 @@
 #include "ast/scopes/types.hpp"
 #include "ast/scopes/registers.hpp"
 #include "ast/scopes/memory_x86_64.hpp"
-#include "ast/litteralTypes.hpp"
+#include "ast/literalTypes.hpp"
 
 namespace codegen
 {
@@ -55,27 +55,29 @@ public:
     emitGlobalDirective("_start");
     textSection.preBody << "_start:" << ENDL;
     textSection.preBody << INDENT << "call main" << ENDL;
-    textSection.preBody << INDENT << "mov rdi, rax                 ; Exit code (0) expects return of main to be put in rax for now" << ENDL;
-    textSection.preBody << INDENT << "mov rax, 60                  ; Syscall number for exit (60)" << ENDL;
+    textSection.preBody << INDENT << "mov rdi, " << scopes::regToStr(scopes::getProperRegisterFromID64(scopes::returnRegister)) << "            ; Exit code (0) expects return of main to be put in rax for now" << ENDL;
+    textSection.preBody << INDENT << "mov " << scopes::regToStr(scopes::getProperRegisterFromID64(scopes::returnRegister)) << ", 60                  ; Syscall number for exit (60)" << ENDL;
     textSection.preBody << INDENT << "syscall                      ; Make the syscall" << ENDL;
   }
 
   void emitSaveBasePointer() {
-    textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_RBP) << ", 8 ; Save the base pointer" << ENDL;
-    textSection.body << INDENT << "mov [rbp], rbp ; Save the base pointer" << ENDL;
+    textSection.body << INDENT << "push " << scopes::regToStr(scopes::Register::REG_RBP) << "                 ; Save the base pointer" << ENDL;
   }
 
   void emitSetBasePointerToCurrentStackPointer() {
-    textSection.body << INDENT << "mov " << scopes::regToStr(scopes::Register::REG_RBP) << ", " << scopes::regToStr(scopes::Register::REG_RSP) << " ; Set base pointer to current stack pointer" << ENDL;
+    textSection.body << INDENT << "mov " << scopes::regToStr(scopes::Register::REG_RBP) << ", " << scopes::regToStr(scopes::Register::REG_RSP) << "              ; Set base pointer to current stack pointer" << ENDL;
   }
 
   void emitGlobalDirective(const std::string_view &name) {
     textSection.globalDeclarations << INDENT << "global " << name << ":function" << ENDL;
   }
 
+  void emitRestoreStackPointer() {
+    textSection.body << INDENT << "mov " << scopes::regToStr(scopes::Register::REG_RSP) << ", " << scopes::regToStr(scopes::Register::REG_RBP) << "              ; Restoring stack pointer" << ENDL;
+  }
+
   void emitRestoreBasePointer() {
-    textSection.body << INDENT << "mov rbp, [rbp] ; Restore the base pointer" << ENDL;
-    textSection.body << INDENT << "add " << scopes::regToStr(scopes::Register::REG_RBP) << ", 8 ; Restore the base pointer" << ENDL;
+    textSection.body << INDENT << "pop " << scopes::regToStr(scopes::Register::REG_RBP) << "                   ; Restore the base pointer" << ENDL;
   }
 
   void emitFunctionLabel(const std::string_view &name) {
@@ -88,6 +90,7 @@ public:
   }
 
   void emitCall(const std::string_view &name) {
+    textSection.body << INDENT << "sub " << scopes::regToStr(scopes::Register::REG_RSP) << ", 4 ; Aligning stack" << ENDL;
     textSection.body << INDENT << "call " << name << ENDL;
   }
 
@@ -145,8 +148,8 @@ public:
     }, location);
   }
 
-  void emitLoadNumberLitteral(const scopes::Register &reg, const ast::NumberLitteralUnderlyingType &value) {
-    textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", " << value << " ; Loading number litteral" << ENDL;
+  void emitLoadNumberLiteral(const scopes::Register &reg, const ast::NumberLiteralUnderlyingType &value) {
+    textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", " << value << " ; Loading number literal" << ENDL;
   }
 
   void generateAsmCode(std::ostream &asmCode) {

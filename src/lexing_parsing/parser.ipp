@@ -8,7 +8,7 @@
 #include "ast/nodes/nodes.h"
 #include "dbg/errors.hpp"
 #include "dbg/utils.hpp"
-#include "ast/litteralTypes.hpp"
+#include "ast/literalTypes.hpp"
 
 namespace parser
 {
@@ -224,7 +224,7 @@ private:
   ast::NumberLiteral parseNumberLiteral()
   {
     auto numberView = match(TT_NUMBER);
-    ast::NumberLitteralUnderlyingType number = utils::readNumber<ast::NumberLitteralUnderlyingType>(numberView);
+    ast::NumberLiteralUnderlyingType number = utils::readNumber<ast::NumberLiteralUnderlyingType>(numberView);
     return ast::NumberLiteral(number);
   }
 
@@ -234,15 +234,9 @@ private:
     {
       std::string_view ident = match(TT_IDENT);
       if (_currentToken.type == TT_LPAR)
-      {
-        ast::FunctionCall functionCall = parseFunctionCall(ident);
-        return ast::Expression(std::move(functionCall));
-      }
+        return ast::Expression(parseFunctionCall(ident));
       else
-      {
         return ast::Expression(ast::Variable(std::move(ident)));
-      }
-      return ast::Expression(ast::Variable(std::move(ident)));
     }
 
     auto numberLiteral = parseNumberLiteral();
@@ -334,7 +328,6 @@ private:
     while (_currentToken.type != TT_RPAR)
     {
       arguments.push_back(parseExpression());
-      // TODO: how do we know the expression will end?
       if (_currentToken.type != TT_RPAR)
         match(TT_COMMA);
     }

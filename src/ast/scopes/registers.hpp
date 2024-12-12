@@ -177,20 +177,20 @@ enum class Register: uint32_t
 _COUNT
 };
 
-std::vector<Register> functionArgumentRegisters = {
-  Register::REG_RDI,
-  Register::REG_RSI,
-  Register::REG_RDX,
-  Register::REG_RCX,
-  Register::REG_R8,
-  Register::REG_R9,
-};
-
 enum class GeneralPurposeRegister: uint32_t {
 #define X(reg, str) reg,
 REGISTER_ID_64_LIST
 #undef X
 _COUNT,
+};
+
+constexpr std::array<GeneralPurposeRegister, 6> FUNCTION_ARGUMENT_REGISTERS = {
+  GeneralPurposeRegister::REG_RDI,
+  GeneralPurposeRegister::REG_RSI,
+  GeneralPurposeRegister::REG_RDX,
+  GeneralPurposeRegister::REG_RCX,
+  GeneralPurposeRegister::REG_R8,
+  GeneralPurposeRegister::REG_R9,
 };
 
 #define X(reg, str)                                                            \
@@ -230,7 +230,45 @@ inline Register strToReg(std::string_view str) {
 
 inline std::ostream& operator<<(std::ostream& os, const Register token) { return os << regToStr(token); }
 
+inline constexpr scopes::Register getProperRegisterFromID64(GeneralPurposeRegister reg, byteSize_t size = 8, bool isHigh = false)
+{
+  switch (size)
+  {
+  case 8:
+    return static_cast<Register>(reg);
+  case 4:
+    return static_cast<Register>(static_cast<uint32_t>(reg) + 16);
+  case 2:
+    return static_cast<Register>(static_cast<uint32_t>(reg) + 32);
+  case 1:
+    if (isHigh && (
+      reg != GeneralPurposeRegister::REG_RAX &&
+      reg != GeneralPurposeRegister::REG_RBX &&
+      reg != GeneralPurposeRegister::REG_RCX &&
+      reg != GeneralPurposeRegister::REG_RDX
+    ))
+    {
+      THROW("Invalid high register for " << regToStr(static_cast<Register>(reg)));
+    }
+    return static_cast<Register>(static_cast<uint32_t>(reg) + 48 + (isHigh ? 16 : 0));
+  default:
+    THROW("Invalid register size: " << size);
+  }
+}  
+
+static_assert(static_cast<uint32_t>(Register::REG_RAX) == 0, "rax should be the first register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_RAX, 8) == Register::REG_RAX, "rax should be the first register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_RAX, 4) == Register::REG_EAX, "eax should be the first 32-bit register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_RAX, 2) == Register::REG_AX, "ax should be the first 16-bit register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_RAX, 1, false) == Register::REG_AL, "al should be the first 8-bit register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_RAX, 1, true) == Register::REG_AH, "ah should be the first 8-bit register");
+static_assert(static_cast<uint32_t>(Register::REG_R15) == 15, "r15 should be the last register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_R15, 8) == Register::REG_R15, "r15 should be the last register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_R15, 4) == Register::REG_R15D, "r15d should be the last 32-bit register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_R15, 2) == Register::REG_R15W, "r15w should be the last 16-bit register");
+static_assert(getProperRegisterFromID64(GeneralPurposeRegister::REG_R15, 1, false) == Register::REG_R15B, "r15b should be the last 8-bit register");
+
 // To change later proably?
-constexpr auto returnRegister = scopes::Register::REG_RBX;
+constexpr auto returnRegister = scopes::GeneralPurposeRegister::REG_RAX;
 
 } /* namespace scopes */
