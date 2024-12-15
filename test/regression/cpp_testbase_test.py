@@ -6,6 +6,8 @@ import logging
 import shutil
 from pathlib import Path
 
+FAILING_KEYWORD = "failing"
+FAILING_RETURNCODES = [1, 3]
 ACCEPTABLE_RETURNCODES = [0, 1, 3]
 OUTPUT_EXTS = ["asm", "o", "out"]
 
@@ -92,6 +94,9 @@ def test_compiler_output(test_file):
     assert len(get_outputs()) == 0, "Some outputs still exist"
     for file in moved_files:
         assert file.exists(), f"Output file {file} does not exist"
-    logging.debug(f"Outputs generated with return code [{subprocess_result.returncode}] allowed {ACCEPTABLE_RETURNCODES}")
-    assert subprocess_result.returncode in ACCEPTABLE_RETURNCODES, f"Unexpected return code [{subprocess_result.returncode}]" 
+
+    expect_fail = FAILING_KEYWORD not in str(test_file)
+    acceptable_returncodes = ACCEPTABLE_RETURNCODES if expect_fail else FAILING_RETURNCODES
+    logging.debug(f"Outputs generated with return code [{subprocess_result.returncode}] allowed {acceptable_returncodes} (expect_fail={expect_fail})")
+    assert subprocess_result.returncode in acceptable_returncodes, f"Unexpected return code [{subprocess_result.returncode}] expected_fail=[{expect_fail}]"
 
