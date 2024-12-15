@@ -16,6 +16,8 @@ void printnum(int num) {
     "\tmov [rcx], dl           ; Store the character\n"
     "\ttest rax, rax           ; Check if quotient is zero\n"
     "\tjnz .reverse_loop        ; Continue if not zero\n"
+    "\tdec rcx                 ; Move back in the buffer\n"
+    "\tmov byte [rcx], 0x0A     ; newline\n"
     "\t; Prepare to call write\n"
     "\tmov rdx, rsi            ; End of string position\n"
     "\tsub rdx, rcx            ; Calculate length of the string\n"
@@ -28,7 +30,7 @@ void printnum(int num) {
 
 int main() {
   printnum(12345);
-  printnum(28 * 32);
+  // printnum(28 * 32);
   printnum(41 + 1);
   return 0;
 }

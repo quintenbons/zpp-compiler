@@ -157,7 +157,7 @@ private:
 
 class BinaryOperation: interface::AstNode<BinaryOperation> {
 public:
-  enum class Operation: char { NOT_AN_OPERATION='N', PLUS='+', MINUS='-', MULTIPLY='*', DIVIDE='/' };
+  enum class Operation: char { NOT_AN_OPERATION='N', ADD='+', SUBSTRACT='-', MULTIPLY='*', DIVIDE='/' };
 
   static constexpr const char *node_name = "Node_BinaryOperation";
 

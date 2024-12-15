@@ -44,8 +44,8 @@ public:
 private:
   BinOp getBinaryOperation(TokenType op) {
     switch (op) {
-      case TT_PLUS: return BinOp::PLUS;
-      case TT_MINUS: return BinOp::MINUS;
+      case TT_PLUS: return BinOp::ADD;
+      case TT_MINUS: return BinOp::SUBSTRACT;
       case TT_STAR: return BinOp::MULTIPLY;
       case TT_SLASH: return BinOp::DIVIDE;
       default: return BinOp::NOT_AN_OPERATION;
@@ -262,10 +262,7 @@ private:
   {
     // Trivial expression
     auto expr = parseTerm();
-    LOG_DEBUG("trivial? " << _currentToken.type << " " << _currentToken.position.lineCount);
     if (!isBinaryOp(_currentToken.type)) return expr;
-
-    LOG_DEBUG("no");
 
     // Composed expression
     auto lhs = std::make_unique<ast::Expression>(std::move(expr));
@@ -273,7 +270,7 @@ private:
     for (auto op = getBinaryOperation(_currentToken.type); op != BinOp::NOT_AN_OPERATION; op = getBinaryOperation(_currentToken.type)) {
       nextToken();
       auto rhs = std::make_unique<ast::Expression>(parseTerm());
-      lhs = std::make_unique<ast::Expression>(ast::BinaryOperation(BinOp::PLUS, std::move(lhs), std::move(rhs)));
+      lhs = std::make_unique<ast::Expression>(ast::BinaryOperation(op, std::move(lhs), std::move(rhs)));
     }
 
     // ugly. we should just return unique_ptrs for all parsing methods instead
