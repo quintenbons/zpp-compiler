@@ -86,7 +86,11 @@ def run_compiler(test_input):
 
     return result
 
-@pytest.mark.parametrize("test_file", CPP_TESTBASE.rglob("*.cpp"))
+@pytest.mark.parametrize(
+    "test_file",
+    CPP_TESTBASE.rglob("*.cpp"),
+    ids=[str(test_file.relative_to(CPP_TESTBASE)) for test_file in CPP_TESTBASE.rglob("*.cpp")]  # Generating IDs based on relative paths
+)
 def test_compiler_output(test_file):
     logging.debug(f"Testing file: {test_file}")
     subprocess_result = run_compiler(test_file)
