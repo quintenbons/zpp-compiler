@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "ast/scopes/registers.hpp"
+#include "dbg/logger.hpp"
 #include "lexer.ipp"
 #include "ast/nodes/nodes.h"
 #include "dbg/errors.hpp"
@@ -17,6 +18,9 @@ namespace { using namespace lexer; }
 
 class Parser
 {
+private:
+  using BinOp = ast::BinaryOperation::Operation;
+
 public:
   Parser(Lexer &&lexer): _lexer{std::move(lexer)} {}
   Parser(std::ifstream &&inputFile): _lexer(inputFile) {}
@@ -38,6 +42,17 @@ public:
   }
 
 private:
+  BinOp getBinaryOperation(TokenType op) {
+    switch (op) {
+      case TT_PLUS: return BinOp::PLUS;
+      case TT_MINUS: return BinOp::MINUS;
+      case TT_STAR: return BinOp::MULTIPLY;
+      case TT_SLASH: return BinOp::DIVIDE;
+      default: return BinOp::NOT_AN_OPERATION;
+    }
+  }
+  bool isBinaryOp(TokenType op) { return getBinaryOperation(op) != BinOp::NOT_AN_OPERATION; }
+
   inline std::string_view getRawUntil(char breaker)
   {
     std::string_view raw = _lexer.getRawUntil(breaker);
@@ -228,7 +243,7 @@ private:
     return ast::NumberLiteral(number);
   }
 
-  ast::Expression parseExpression()
+  ast::Expression parseTerm()
   {
     if (_currentToken.type == TT_IDENT)
     {
@@ -241,6 +256,28 @@ private:
 
     auto numberLiteral = parseNumberLiteral();
     return ast::Expression(std::move(numberLiteral));
+  }
+
+  ast::Expression parseExpression()
+  {
+    // Trivial expression
+    auto expr = parseTerm();
+    LOG_DEBUG("trivial? " << _currentToken.type << " " << _currentToken.position.lineCount);
+    if (!isBinaryOp(_currentToken.type)) return expr;
+
+    LOG_DEBUG("no");
+
+    // Composed expression
+    auto lhs = std::make_unique<ast::Expression>(std::move(expr));
+
+    for (auto op = getBinaryOperation(_currentToken.type); op != BinOp::NOT_AN_OPERATION; op = getBinaryOperation(_currentToken.type)) {
+      nextToken();
+      auto rhs = std::make_unique<ast::Expression>(parseTerm());
+      lhs = std::make_unique<ast::Expression>(ast::BinaryOperation(BinOp::PLUS, std::move(lhs), std::move(rhs)));
+    }
+
+    // ugly. we should just return unique_ptrs for all parsing methods instead
+    return std::move(*lhs);
   }
 
   ast::ReturnStatement parseReturnStatement()

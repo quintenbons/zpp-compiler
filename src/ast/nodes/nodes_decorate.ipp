@@ -44,6 +44,13 @@ inline void FunctionCall::decorate(scopes::ScopeStack &scopeStack,
   }
 }
 
+inline void BinaryOperation::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  lhs->decorate(scopeStack, scope);
+  rhs->decorate(scopeStack, scope);
+  // TODO add binary operation return type to decoration based on lhs & rhs
+}
+
+
 inline void Declaration::decorate(scopes::ScopeStack &scopeStack,
                            scopes::Scope &scope) {
   type.decorate(scopeStack, scope);

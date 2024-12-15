@@ -5,6 +5,7 @@
 #include "ast/scopes/registers.hpp"
 #include "ast/scopes/memory_x86_64.hpp"
 #include "ast/literalTypes.hpp"
+#include "codegen/GPRegisterSet.hpp"
 
 namespace codegen
 {
@@ -171,12 +172,15 @@ public:
     asmCode << textSection.body.str();
   }
 
+  scopes::GPRegisterSet &regSet() { return registerSet; }
+
 private:
   bool containsMain = false;
   std::stringstream dataSection;
   std::stringstream RODataSection;
   std::stringstream bssSection;
   TextSection textSection;
+  scopes::GPRegisterSet registerSet;
 };
 
 }
