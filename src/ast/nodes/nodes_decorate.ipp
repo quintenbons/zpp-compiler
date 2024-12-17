@@ -39,6 +39,7 @@ inline void Expression::decorate(scopes::ScopeStack &scopeStack,
 
 inline void FunctionCall::decorate(scopes::ScopeStack &scopeStack,
                             scopes::Scope &scope) {
+  scope.findFunction(name);
   for (auto &arg : arguments) {
     arg.decorate(scopeStack, scope);
   }
