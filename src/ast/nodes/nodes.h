@@ -21,6 +21,9 @@ constexpr Visibility allVisibilities[] = {
 
 class Expression;
 class FunctionCall;
+class Statement;
+class ConditionalStatement;
+class CodeBlock;
 
 class Type : public interface::AstNode<Type> {
 public:
@@ -147,7 +150,7 @@ public:
                                   scopes::GeneralPurposeRegister targetRegister) const {
     (void)generator;
     (void)targetRegister;
-    THROW("FunctionCall loadValueInRegister Not implemented");
+    TODO("FunctionCall loadValueInRegister Not implemented");
   }
 
 private:
@@ -282,14 +285,11 @@ private:
   StringLiteral asmBlock;
   std::vector<BindingRequest> requests;
 };
-
 class Instruction : public interface::AstNode<Instruction> {
 public:
   static constexpr const char *node_name = "Node_Instruction";
   using InstructionVariant =
-      std::variant<ReturnStatement, InlineAsmStatement, Declaration, Expression
-                   // Definition,
-                   >;
+      std::variant<ReturnStatement, InlineAsmStatement, Declaration, Expression>;
 
 public:
   template <typename T>
@@ -305,23 +305,61 @@ private:
   InstructionVariant instr;
 };
 
-class InstructionList : public interface::AstNode<InstructionList> {
+
+
+
+class CodeBlock : public interface::AstNode<CodeBlock> {
 public:
-  static constexpr const char *node_name = "Node_InstructionList";
+  static constexpr const char *node_name = "Node_CodeBlock";
 
 public:
-  InstructionList(std::vector<Instruction> &&instructions)
-      : instructions(std::move(instructions)) {}
+  CodeBlock(std::vector<Statement> &&statements)
+      : statements(std::move(statements)) {}
+  // CodeBlock(Statement &&statement) : statements({statement}) {}
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+  /** 
+   * @param inheritScope If true, the scope passed in parameter should also be the scope of the statements
+   */
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope, bool inheritScope);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const;
+
+private:
+  std::vector<Statement> statements;
+};
+
+
+class ConditionalStatement : public interface::AstNode<ConditionalStatement> {
+public:
+  static constexpr const char *node_name = "Node_ConditionalStatement";
+
+public:
+  ConditionalStatement(Expression &&condition, CodeBlock &&ifBody,
+                       CodeBlock &&elseBody)
+      : condition(std::move(condition)), ifBody(std::move(ifBody)),
+        elseBody(std::move(elseBody)) {} 
+
+  ConditionalStatement(Expression &&condition, CodeBlock &&ifBody)
+      : condition(std::move(condition)), ifBody(std::move(ifBody)) {}
+
 
   inline void debug(size_t depth) const;
 
   inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
 
-  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const;
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
 
 private:
-  std::vector<Instruction> instructions;
+  Expression condition;
+  CodeBlock ifBody;
+  std::optional<CodeBlock> elseBody;
 };
+
+
+
 
 class FunctionParameter : public interface::AstNode<FunctionParameter> {
 public:
@@ -390,7 +428,7 @@ public:
 
 public:
   Function(Type &&returnType, std::string_view name,
-           FunctionParameterList &&params, InstructionList &&body)
+           FunctionParameterList &&params, CodeBlock &&body)
       : returnType(returnType), name(name), params(params), body(std::move(body)) {}
 
   inline void debug(size_t depth) const;
@@ -403,7 +441,7 @@ private:
   Type returnType;
   std::string_view name;
   FunctionParameterList params;
-  InstructionList body;
+  CodeBlock body;
   const scopes::FunctionDescription *description = nullptr;
 };
 
@@ -413,7 +451,7 @@ public:
 
 public:
   Method(Type &&returnType, std::string_view name,
-         FunctionParameterList &&params, InstructionList &&body)
+         FunctionParameterList &&params, CodeBlock &&body)
       : returnType(returnType), name(name), params(params), body(std::move(body)) {}
 
   inline void debug(size_t depth) const;
@@ -424,7 +462,7 @@ private:
   Type returnType;
   std::string_view name;
   FunctionParameterList params;
-  InstructionList body;
+  CodeBlock body;
 };
 
 class AccessSpecifier : public interface::AstNode<AccessSpecifier> {
@@ -464,6 +502,24 @@ private:
   MethodList methods;
 };
 
+class Statement: public interface::AstNode<Statement> {
+  public:
+    static constexpr const char *node_name = "Node_Statement";
+    using StatementVariant = std::variant<Instruction, ConditionalStatement, CodeBlock /**, LoopStatement */>;
+
+  public:
+    template <typename T>
+    Statement(T &&statement) : statement(std::forward<T>(statement)) {}
+
+    inline void debug(size_t depth) const;
+
+    inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+    inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const;
+
+  private:
+    StatementVariant statement;
+};
 class TranslationUnit : public interface::AstNode<TranslationUnit> {
 public:
   static constexpr const char *node_name = "Node_TranslationUnit";
@@ -496,7 +552,8 @@ private:
   Y(StringLiteral)                                                             \
   Y(ReturnStatement)                                                           \
   Y(InlineAsmStatement)                                                        \
-  Y(InstructionList)                                                           \
+  Y(ConditionalStatement)                                                      \
+  Y(CodeBlock)                                                           \
   Y(FunctionParameter)                                                         \
   Y(FunctionParameterList)                                                     \
   Y(Function)                                                                  \
@@ -508,6 +565,7 @@ private:
 
 #define VARIANT_NODE_LIST                                                      \
   Y(Expression)                                                                \
+  Y(Statement)                                                                 \
   Y(Instruction)
 
 #define NODE_LIST                                                              \

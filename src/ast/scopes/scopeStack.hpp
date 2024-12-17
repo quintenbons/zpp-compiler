@@ -90,7 +90,7 @@ public:
     }
     for (auto &[name, description]: _functions)
     {
-      ss << "\n  [Function] name=" << description->name << " ; returnType=" << description->returnType->name << " ; parameters=";
+      ss << "\n  [Function] id=" << description->functionId << " name=" << description->name << " ; returnType=" << description->returnType->name << " ; parameters=";
       for (const TypeDescription *param: description->parameters)
       {
         ss << param->name << " ";
@@ -115,6 +115,7 @@ public:
   : _scopes{}
   , _types{generatePrimitiveTypeVector()}
   , _variableId{0}
+  , _functionId{0}
   {
     Scope &rootScope = createChildScope(nullptr);
 

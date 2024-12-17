@@ -107,7 +107,6 @@ private:
         USER_ASSERT(_currentToken.type != ttBreaker, "Found trailing " << ttSeparator << " in list, expected new element", _currentToken.position);
       }
     }
-
     return std::move(elementList);
   }
 
@@ -148,7 +147,7 @@ private:
     ast::Type returnType = parseType();
     std::string_view name = match(TT_IDENT);
     ast::FunctionParameterList parametersNode = parseFunctionParams();
-    ast::InstructionList body = parseCodeBlock();
+    ast::CodeBlock body = parseCodeBlock();
     return ast::Function(std::move(returnType), name, std::move(parametersNode), std::move(body));
   }
 
@@ -166,7 +165,7 @@ private:
       std::string_view name = match(TT_IDENT);
       if (_currentToken.type == TT_LPAR) {
         ast::FunctionParameterList parametersNode = parseFunctionParams();
-        ast::InstructionList body = parseCodeBlock();
+        ast::CodeBlock body = parseCodeBlock();
         ast::Method method(std::move(type), name, std::move(parametersNode), std::move(body));
         methods.emplace_back(std::move(method), std::move(attribute_specifier));
       }
@@ -189,6 +188,24 @@ private:
     if (_currentToken.type == TT_IDENT) name = match(TT_IDENT);
 
     return ast::FunctionParameter(std::move(type), ast::Variable(std::move(name)));
+  }
+
+  ast::ConditionalStatement parseConditionalStatement() {
+    match(TT_K_IF);
+    match(TT_LPAR);
+    auto condition = parseExpression();
+    match(TT_RPAR);
+    auto ifBody = parseCodeBlock();
+
+    if (_currentToken.type == TT_K_ELSE) {
+      match(TT_K_ELSE);
+      if (_currentToken.type == TT_K_IF) {
+        return ast::ConditionalStatement(std::move(condition), std::move(ifBody), ast::CodeBlock(std::vector<ast::Statement>{ast::Statement(parseConditionalStatement())}));
+      }
+      auto cs = ast::ConditionalStatement(std::move(condition), std::move(ifBody), parseCodeBlock());
+      return cs;
+    } 
+    else return ast::ConditionalStatement(std::move(condition), std::move(ifBody));
   }
 
   ast::FunctionParameterList parseFunctionParams()
@@ -369,12 +386,24 @@ private:
     return ast::FunctionCall(name, std::move(arguments));
   }
 
-  ast::InstructionList parseCodeBlock()
+  ast::Statement parseStatement() 
+  {
+    if (_currentToken.type == TT_LCURL) return ast::Statement(parseCodeBlock());
+    if (_currentToken.type == TT_K_IF) return ast::Statement(parseConditionalStatement());
+    return ast::Statement(parseSingleInstruction());
+  }
+
+  ast::CodeBlock parseCodeBlock()
   {
     match(TT_LCURL);
-    auto instructions = parseSeparatedList<ast::Instruction, TT_SEMI, TRAILING_REQUIRED, TT_RCURL>([this]() { return parseSingleInstruction(); });
+    std::vector<ast::Statement> statements;
+    while (_currentToken.type != TT_RCURL)
+    {
+      statements.push_back(parseStatement());
+      if (_currentToken.type == TT_SEMI) match(TT_SEMI);
+    }
     match(TT_RCURL);
-    return ast::InstructionList(std::move(instructions));
+    return ast::CodeBlock(std::move(statements)); 
   }
 
 private:

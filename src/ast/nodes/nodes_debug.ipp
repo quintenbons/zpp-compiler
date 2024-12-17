@@ -75,11 +75,15 @@ inline void Instruction::debug(size_t depth) const {
   std::visit([depth](const auto &node) { node.debug(depth); }, instr);
 }
 
-inline void InstructionList::debug(size_t depth) const {
-  logNode(depth, "InstructionCount: ", instructions.size());
-  for (const auto &instr : instructions) {
+inline void CodeBlock::debug(size_t depth) const {
+  logNode(depth, "InstructionCount: ", statements.size());
+  for (const auto &instr : statements) {
     instr.debug(depth + 1);
   }
+}
+
+inline void Statement::debug(size_t depth) const {
+  std::visit([depth](const auto &node) { node.debug(depth); }, statement);
 }
 
 inline void FunctionParameter::debug(size_t depth) const {
@@ -154,6 +158,16 @@ inline void Class::debug(size_t depth) const {
   }
 }
 
+inline void ConditionalStatement::debug(size_t depth) const {
+  logNode(depth);
+  condition.debug(depth + 1);
+  ifBody.debug(depth + 1);
+  if (elseBody.has_value()) {
+    logNode(depth, "Else");
+    elseBody->debug(depth + 1);
+  }
+}
+  
 inline void TranslationUnit::debug(size_t depth) const {
   logNode(depth, "Function count: ", functions.size());
   for (const auto &funcNode : functions) {

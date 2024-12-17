@@ -77,13 +77,6 @@ inline void Instruction::decorate(scopes::ScopeStack &scopeStack,
       instr);
 }
 
-inline void InstructionList::decorate(scopes::ScopeStack &scopeStack,
-                               scopes::Scope &scope) {
-  for (auto &instr : instructions) {
-    instr.decorate(scopeStack, scope);
-  }
-}
-
 inline void FunctionParameter::decorate(scopes::ScopeStack &scopeStack,
                                  scopes::Scope &scope) {
   type.decorate(scopeStack, scope);
@@ -102,11 +95,43 @@ inline void FunctionParameterList::decorate(scopes::ScopeStack &scopeStack,
   }
 }
 
+inline void CodeBlock::decorate(scopes::ScopeStack &scopeStack,
+                               scopes::Scope &scope) {
+  scopes::Scope &newScope = scopeStack.createChildScope(&scope);
+  for (auto &instr : statements) {
+    instr.decorate(scopeStack, newScope);
+  }
+}
+inline void CodeBlock::decorate(scopes::ScopeStack &scopeStack,
+                               scopes::Scope &scope, bool inheritScope) {
+  if (!inheritScope)
+    return decorate(scopeStack, scope);
+  for (auto &instr : statements) {
+    instr.decorate(scopeStack, scope);
+  }
+}
+                              
+
+inline void Statement::decorate(scopes::ScopeStack &scopeStack,
+                          scopes::Scope &scope) {
+  std::visit(
+      [&scopeStack, &scope](auto &node) { node.decorate(scopeStack, scope); },
+      statement);
+}
+
+inline void ConditionalStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  condition.decorate(scopeStack, scope);
+  ifBody.decorate(scopeStack, scope);
+  if (elseBody.has_value()) {
+    elseBody->decorate(scopeStack, scope);
+  }
+}
+
 inline void Function::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
   scopes::Scope &newScope = scopeStack.createChildScope(&scope);
   returnType.decorate(scopeStack, newScope);
   params.decorate(scopeStack, newScope);
-  body.decorate(scopeStack, newScope);
+  body.decorate(scopeStack, newScope, true);
 
   std::vector<const scopes::TypeDescription *> paramTypes;
   for (auto &param : params) {
