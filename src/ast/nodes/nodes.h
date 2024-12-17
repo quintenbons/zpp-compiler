@@ -315,20 +315,23 @@ public:
 public:
   CodeBlock(std::vector<Statement> &&statements)
       : statements(std::move(statements)) {}
-  // CodeBlock(Statement &&statement) : statements({statement}) {}
 
   inline void debug(size_t depth) const;
 
   inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
-  /** 
-   * @param inheritScope If true, the scope passed in parameter should also be the scope of the statements
-   */
-  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope, bool inheritScope);
 
   inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const;
 
+  inline scopes::Scope &getOrCreateScope(scopes::ScopeStack &scopeStack,
+                                         scopes::Scope &scope) {
+    if (!this->scope) {
+      this->scope = &scopeStack.createChildScope(&scope);
+    }
+    return *this->scope;
+  }
 private:
   std::vector<Statement> statements;
+  scopes::Scope *scope = nullptr;
 };
 
 
@@ -553,7 +556,7 @@ private:
   Y(ReturnStatement)                                                           \
   Y(InlineAsmStatement)                                                        \
   Y(ConditionalStatement)                                                      \
-  Y(CodeBlock)                                                           \
+  Y(CodeBlock)                                                                 \
   Y(FunctionParameter)                                                         \
   Y(FunctionParameterList)                                                     \
   Y(Function)                                                                  \

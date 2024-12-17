@@ -97,20 +97,11 @@ inline void FunctionParameterList::decorate(scopes::ScopeStack &scopeStack,
 
 inline void CodeBlock::decorate(scopes::ScopeStack &scopeStack,
                                scopes::Scope &scope) {
-  scopes::Scope &newScope = scopeStack.createChildScope(&scope);
+  scopes::Scope &newScope = getOrCreateScope(scopeStack, scope);
   for (auto &instr : statements) {
     instr.decorate(scopeStack, newScope);
   }
 }
-inline void CodeBlock::decorate(scopes::ScopeStack &scopeStack,
-                               scopes::Scope &scope, bool inheritScope) {
-  if (!inheritScope)
-    return decorate(scopeStack, scope);
-  for (auto &instr : statements) {
-    instr.decorate(scopeStack, scope);
-  }
-}
-                              
 
 inline void Statement::decorate(scopes::ScopeStack &scopeStack,
                           scopes::Scope &scope) {
@@ -128,10 +119,10 @@ inline void ConditionalStatement::decorate(scopes::ScopeStack &scopeStack, scope
 }
 
 inline void Function::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
-  scopes::Scope &newScope = scopeStack.createChildScope(&scope);
+  scopes::Scope &newScope = body.getOrCreateScope(scopeStack, scope);
   returnType.decorate(scopeStack, newScope);
   params.decorate(scopeStack, newScope);
-  body.decorate(scopeStack, newScope, true);
+  body.decorate(scopeStack, newScope);
 
   std::vector<const scopes::TypeDescription *> paramTypes;
   for (auto &param : params) {

@@ -202,8 +202,7 @@ private:
       if (_currentToken.type == TT_K_IF) {
         return ast::ConditionalStatement(std::move(condition), std::move(ifBody), ast::CodeBlock(std::vector<ast::Statement>{ast::Statement(parseConditionalStatement())}));
       }
-      auto cs = ast::ConditionalStatement(std::move(condition), std::move(ifBody), parseCodeBlock());
-      return cs;
+      return ast::ConditionalStatement(std::move(condition), std::move(ifBody), parseCodeBlock());
     } 
     else return ast::ConditionalStatement(std::move(condition), std::move(ifBody));
   }
