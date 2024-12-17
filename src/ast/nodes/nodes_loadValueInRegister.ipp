@@ -1,3 +1,4 @@
+#include "ast/scopes/registers.hpp"
 #include "nodes.h"
 
 namespace ast {
@@ -11,9 +12,14 @@ inline void BinaryOperation::loadValueInRegister(codegen::NasmGenerator_x86_64 &
   lhs->loadValueInRegister(generator, targetRegister);
   rhs->loadValueInRegister(generator, tmpRegister);
 
+  constexpr auto size = 8; // TODO get size from decoration step
+
+  auto properTargetReg = scopes::getProperRegisterFromID64(targetRegister, size);
+  auto properTmpReg = scopes::getProperRegisterFromID64(tmpRegister, size);
+
   switch (op) {
     case Operation::ADD:
-      generator.emitAdd(targetRegister, tmpRegister);
+      generator.emitAdd(properTargetReg, properTmpReg);
       break;
     case Operation::SUBSTRACT:
       generator.emitSub(targetRegister, tmpRegister);

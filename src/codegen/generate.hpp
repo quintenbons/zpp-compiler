@@ -112,12 +112,12 @@ public:
     }, location);
   }
 
-  void emitBinaryOp(const char *op, const auto &tgt, const auto &src) {
+  void emitBinaryOp(const char *op, const scopes::Register &tgt, const scopes::Register &src) {
     textSection.body << INDENT << op << " " << scopes::regToStr(tgt) << ", " << scopes::regToStr(src) << ENDL;
   }
 
-  void emitAdd(const auto &tgt, const auto &src) { emitBinaryOp("add", tgt, src); }
-  void emitSub(const auto &tgt, const auto &src) { emitBinaryOp("sub", tgt, src); }
+  void emitAdd(const scopes::Register &tgt, const scopes::Register &src) { emitBinaryOp("add", tgt, src); }
+  void emitSub(const scopes::Register &tgt, const scopes::Register &src) { emitBinaryOp("sub", tgt, src); }
 
   void emitStoreInMemory(const scopes::LocationDescription &location, const scopes::Register &reg) {
     std::visit([this, &reg](auto &&arg) {
