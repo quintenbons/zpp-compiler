@@ -16,7 +16,7 @@ inline void BinaryOperation::loadValueInRegister(codegen::NasmGenerator_x86_64 &
       generator.emitAdd(targetRegister, tmpRegister);
       break;
     case Operation::SUBSTRACT:
-      generator.emitAdd(targetRegister, tmpRegister);
+      generator.emitSub(targetRegister, tmpRegister);
       break;
     default:
       THROW("Unrecognised operation " << static_cast<char>(op));
