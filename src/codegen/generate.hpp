@@ -5,6 +5,7 @@
 #include "ast/scopes/registers.hpp"
 #include "ast/scopes/memory_x86_64.hpp"
 #include "ast/literalTypes.hpp"
+#include "codegen/GPRegisterSet.hpp"
 
 namespace codegen
 {
@@ -111,6 +112,13 @@ public:
     }, location);
   }
 
+  void emitBinaryOp(const char *op, const scopes::Register &tgt, const scopes::Register &src) {
+    textSection.body << INDENT << op << " " << scopes::regToStr(tgt) << ", " << scopes::regToStr(src) << ENDL;
+  }
+
+  void emitAdd(const scopes::Register &tgt, const scopes::Register &src) { emitBinaryOp("add", tgt, src); }
+  void emitSub(const scopes::Register &tgt, const scopes::Register &src) { emitBinaryOp("sub", tgt, src); }
+
   void emitStoreInMemory(const scopes::LocationDescription &location, const scopes::Register &reg) {
     std::visit([this, &reg](auto &&arg) {
       using T = std::decay_t<decltype(arg)>;
@@ -171,12 +179,15 @@ public:
     asmCode << textSection.body.str();
   }
 
+  scopes::GPRegisterSet &regSet() { return registerSet; }
+
 private:
   bool containsMain = false;
   std::stringstream dataSection;
   std::stringstream RODataSection;
   std::stringstream bssSection;
   TextSection textSection;
+  scopes::GPRegisterSet registerSet;
 };
 
 }

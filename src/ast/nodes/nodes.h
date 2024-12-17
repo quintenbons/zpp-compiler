@@ -155,13 +155,48 @@ private:
   std::vector<Expression> arguments;
 };
 
+class BinaryOperation: interface::AstNode<BinaryOperation> {
+public:
+  enum class Operation: char { NOT_AN_OPERATION='N', ADD='+', SUBSTRACT='-', MULTIPLY='*', DIVIDE='/' };
+
+  static constexpr const char *node_name = "Node_BinaryOperation";
+
+public:
+  BinaryOperation(Operation op, std::unique_ptr<Expression> &&lhs, std::unique_ptr<Expression> &&rhs)
+    : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+
+  BinaryOperation(const BinaryOperation &other)
+    : op(other.op), lhs(std::make_unique<Expression>(*other.lhs)), rhs(std::make_unique<Expression>(*other.rhs)) {}
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+    (void)generator;
+    THROW("BinaryOperation genAsm_x86_64 should not be called");
+  }
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator, scopes::GeneralPurposeRegister targetRegister) const;
+
+private:
+  Operation op;
+  std::unique_ptr<Expression> lhs;
+  std::unique_ptr<Expression> rhs;
+};
+
 class Expression : public interface::AstNode<Expression> {
 public:
   static constexpr const char *node_name = "Node_Expression";
-  using ExpressionVariant = std::variant<NumberLiteral, Variable, FunctionCall>;
+  using ExpressionVariant = std::variant<NumberLiteral, Variable, FunctionCall, BinaryOperation>;
 
 public:
-  template <typename T> Expression(T &&expr) : expr(std::forward<T>(expr)) {}
+  Expression(const Expression &other) : expr(other.expr) {}
+  Expression(const Expression &&other) : expr(std::move(other.expr)) {}
+  Expression(NumberLiteral &&expr) : expr(std::move(expr)) {}
+  Expression(Variable &&expr) : expr(std::move(expr)) {}
+  Expression(FunctionCall &&expr) : expr(std::move(expr)) {}
+  Expression(BinaryOperation &&expr) : expr(std::move(expr)) {}
 
   inline void debug(size_t depth) const;
 
@@ -356,7 +391,7 @@ public:
 public:
   Function(Type &&returnType, std::string_view name,
            FunctionParameterList &&params, InstructionList &&body)
-      : returnType(returnType), name(name), params(params), body(body) {}
+      : returnType(returnType), name(name), params(params), body(std::move(body)) {}
 
   inline void debug(size_t depth) const;
 
@@ -379,7 +414,7 @@ public:
 public:
   Method(Type &&returnType, std::string_view name,
          FunctionParameterList &&params, InstructionList &&body)
-      : returnType(returnType), name(name), params(params), body(body) {}
+      : returnType(returnType), name(name), params(params), body(std::move(body)) {}
 
   inline void debug(size_t depth) const;
 
@@ -456,6 +491,7 @@ private:
   Y(Type)                                                                      \
   Y(Declaration)                                                               \
   Y(FunctionCall)                                                              \
+  Y(BinaryOperation)                                                           \
   Y(NumberLiteral)                                                             \
   Y(StringLiteral)                                                             \
   Y(ReturnStatement)                                                           \

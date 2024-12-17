@@ -52,7 +52,7 @@ enum ExitCode: int {
       {                                                              \
         ss << ": " << __VA_ARGS__;                                   \
       }                                                              \
-      LOG_ERROR(ss.str());                                           \
+      LOG_ERROR(ss.str() << boost::stacktrace::stacktrace());        \
       std::exit(EXIT_DEBUG_THROW);                                   \
     }                                                                \
   } while (0)
