@@ -139,9 +139,7 @@ protected:
     }
 
     if (opts.outputFile.empty()) {
-      if (opts.compileOnly) opts.outputFile = "./a.s";
-      else if (opts.compileAndAssemble) opts.outputFile = "./a.o";
-      else opts.outputFile = opts.createSharedLib ? "./a.so" : "./a.out";
+      opts.outputFile = opts.createSharedLib ? "./a.so" : "./a.out";
     }
   }
 

@@ -21,7 +21,6 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/ast/nodes/nodes_debug.ipp
   ${SRC_DIR}/ast/nodes/nodes_decorate.ipp
   ${SRC_DIR}/ast/nodes/nodes_genAsm_x86_64.ipp
-  ${SRC_DIR}/ast/nodes/nodes_loadValueInRegister.ipp
   ${SRC_DIR}/ast/scopes/scopeStack.hpp
   ${SRC_DIR}/ast/scopes/types.hpp
   ${SRC_DIR}/ast/scopes/memory_x86_64.hpp

@@ -213,10 +213,6 @@ inline const char *regToStr(Register reg)
   }
 }
 
-inline const char *regToStr(GeneralPurposeRegister reg) {
-  return regToStr(static_cast<Register>(reg));
-}
-
 inline Register strToReg(std::string_view str) {
   static const std::unordered_map<std::string_view, Register> strToRegMap = {
 #define X(reg, str) {str, Register::reg},
