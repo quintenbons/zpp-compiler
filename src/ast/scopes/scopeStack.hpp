@@ -55,7 +55,7 @@ public:
   {
     auto typeDescription = _types.find(name);
     if (typeDescription != _types.end()) return typeDescription->second.get();
-    if (!_parent) THROW("Type not found: " << name << " in scope " << _id);
+    if (!_parent) USER_THROW("Type not found: " << name << " in scope " << _id);
     return _parent->findType(name);
   }
 
@@ -63,7 +63,7 @@ public:
   {
     auto variableDescription = _variables.find(name);
     if (variableDescription != _variables.end()) return variableDescription->second.get();
-    if (!_parent) THROW("Variable not found: " << name << " in scope " << _id);
+    if (!_parent) USER_THROW("Variable not found: " << name << " in scope " << _id);
     return _parent->findVariable(name);
   }
 
@@ -71,7 +71,7 @@ public:
   {
     auto functionDescription = _functions.find(name);
     if (functionDescription != _functions.end()) return functionDescription->second.get();
-    if (!_parent) THROW("Function not found: " << name << " in scope " << _id);
+    if (!_parent) USER_THROW("Function not found: " << name << " in scope " << _id);
     return _parent->findFunction(name);
   }
 
