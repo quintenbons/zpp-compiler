@@ -42,6 +42,12 @@ inline void FunctionCall::debug(size_t depth) const {
   }
 }
 
+inline void BinaryOperation::debug(size_t depth) const {
+  logNode(depth, static_cast<char>(op));
+  lhs->debug(depth+1);
+  rhs->debug(depth+1);
+}
+
 inline void Declaration::debug(size_t depth) const {
   logNode(depth, "Type: ", type.fullName(),
           " ; Assignment: ", assignment.has_value());
