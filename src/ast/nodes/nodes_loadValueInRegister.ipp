@@ -22,7 +22,7 @@ inline void BinaryOperation::loadValueInRegister(codegen::NasmGenerator_x86_64 &
       generator.emitAdd(properTargetReg, properTmpReg);
       break;
     case Operation::SUBSTRACT:
-      generator.emitSub(targetRegister, tmpRegister);
+      generator.emitSub(properTargetReg, properTmpReg);
       break;
     default:
       THROW("Unrecognised operation " << static_cast<char>(op));
