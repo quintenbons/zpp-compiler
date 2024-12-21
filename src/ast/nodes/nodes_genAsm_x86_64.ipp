@@ -20,9 +20,9 @@ inline void Instruction::genAsm_x86_64(
              instr);
 }
 
-inline void InstructionList::genAsm_x86_64(
+inline void CodeBlock::genAsm_x86_64(
     codegen::NasmGenerator_x86_64 &evaluator) const {
-  for (const auto &instr : instructions) {
+  for (const auto &instr : statements) {
     instr.genAsm_x86_64(evaluator);
   }
 }
@@ -37,6 +37,18 @@ inline void FunctionCall::genAsm_x86_64(
     TODO("Implement pushing arguments on the stack");
   }
   generator.emitCall(name);
+}
+
+inline void ConditionalStatement::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  (void)generator;
+  TODO("Implement ConditionalStatement::genAsm_x86_64");
+}
+
+inline void Statement::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  std::visit([&generator](const auto &node) { node.genAsm_x86_64(generator); },
+             statement);
 }
 
 inline void ReturnStatement::genAsm_x86_64(

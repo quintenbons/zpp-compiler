@@ -17,3 +17,8 @@ ENV/
 
 # Poetry
 poetry.lock
+
+# zpp compiled files
+a.asm
+a.o
+a.out
