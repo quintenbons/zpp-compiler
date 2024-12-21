@@ -15,15 +15,43 @@
 
 namespace ast {
 
+#define PURE_NODE_LIST                                                         \
+  X(Type)                                                                      \
+  X(Declaration)                                                               \
+  X(FunctionCall)                                                              \
+  X(BinaryOperation)                                                           \
+  X(NumberLiteral)                                                             \
+  X(StringLiteral)                                                             \
+  X(ReturnStatement)                                                           \
+  X(InlineAsmStatement)                                                        \
+  X(ConditionalStatement)                                                      \
+  X(CodeBlock)                                                                 \
+  X(FunctionParameter)                                                         \
+  X(FunctionParameterList)                                                     \
+  X(Function)                                                                  \
+  X(Method)                                                                    \
+  X(AccessSpecifier)                                                           \
+  X(Attribute)                                                                 \
+  X(Class)                                                                     \
+  X(TranslationUnit)
+
+#define VARIANT_NODE_LIST                                                      \
+  X(Expression)                                                                \
+  X(Statement)                                                                 \
+  X(Instruction)
+
+#define NODE_LIST                                                              \
+  PURE_NODE_LIST                                                               \
+  VARIANT_NODE_LIST
+
+#define X(node)                                                                \
+  class node;
+NODE_LIST
+#undef X
+
 enum class Visibility { Public, Protected, Private };
 constexpr Visibility allVisibilities[] = {
     Visibility::Public, Visibility::Protected, Visibility::Private};
-
-class Expression;
-class FunctionCall;
-class Statement;
-class ConditionalStatement;
-class CodeBlock;
 
 class Type : public interface::AstNode<Type> {
 public:
@@ -523,6 +551,7 @@ class Statement: public interface::AstNode<Statement> {
   private:
     StatementVariant statement;
 };
+
 class TranslationUnit : public interface::AstNode<TranslationUnit> {
 public:
   static constexpr const char *node_name = "Node_TranslationUnit";
@@ -544,41 +573,5 @@ private:
   std::vector<Function> functions;
   std::vector<Class> classes;
 };
-
-#define Y(T) X(T, T::node_name)
-#define PURE_NODE_LIST                                                         \
-  Y(Type)                                                                      \
-  Y(Declaration)                                                               \
-  Y(FunctionCall)                                                              \
-  Y(BinaryOperation)                                                           \
-  Y(NumberLiteral)                                                             \
-  Y(StringLiteral)                                                             \
-  Y(ReturnStatement)                                                           \
-  Y(InlineAsmStatement)                                                        \
-  Y(ConditionalStatement)                                                      \
-  Y(CodeBlock)                                                                 \
-  Y(FunctionParameter)                                                         \
-  Y(FunctionParameterList)                                                     \
-  Y(Function)                                                                  \
-  Y(Method)                                                                    \
-  Y(AccessSpecifier)                                                           \
-  Y(Attribute)                                                                 \
-  Y(Class)                                                                     \
-  Y(TranslationUnit)
-
-#define VARIANT_NODE_LIST                                                      \
-  Y(Expression)                                                                \
-  Y(Statement)                                                                 \
-  Y(Instruction)
-
-#define NODE_LIST                                                              \
-  PURE_NODE_LIST                                                               \
-  VARIANT_NODE_LIST
-
-#define X(node, str)                                                           \
-  inline const char *nodeToStr(const node &) { return str; }
-
-NODE_LIST
-#undef X
 
 } /* namespace ast */
