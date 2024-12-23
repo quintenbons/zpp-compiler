@@ -2,12 +2,27 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/file_status.hpp>
+#include <boost/filesystem/path.hpp>
 #include <fstream>
 #include <format>
+#include <optional>
+#include <unistd.h>
 
 #include "errors.hpp"
 
 namespace utils::fs {
+
+
+static inline std::optional<boost::filesystem::path> getExecutableFilePathUnix() {
+  std::array<char, 1024> buf;
+  ssize_t len = readlink("/proc/self/exe", buf.data(), buf.size() - 1);
+  if (len != -1) {
+    buf[len] = '\0';
+    return boost::filesystem::path(buf.begin(), buf.begin()+len);
+  } else {
+    return std::nullopt;
+  }
+}
 
 static inline void safeExists(boost::filesystem::path filePath) {
   CUSTOM_ASSERT(boost::filesystem::exists(filePath), "File " << filePath << " does not exist", EXIT_IO_ERROR);

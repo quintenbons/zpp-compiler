@@ -26,6 +26,7 @@ public:
   Parser(std::ifstream &&inputFile): _lexer(inputFile) {}
 
   ast::TranslationUnit parseTranslationUnit() {
+    std::vector<ast::FunctionDeclaration> funcDeclarations{};
     std::vector<ast::Function> funcList{};
     std::vector<ast::Class> classList{};
     nextToken();
@@ -33,12 +34,15 @@ public:
     {
       if (_currentToken.type == TT_K_CLASS)
         classList.emplace_back(parseClass());
+      // TODO not assume that all function declarations are extern
+      else if (_currentToken.type == lexer::TT_K_EXTERN)
+        funcDeclarations.emplace_back(parseFunctionDeclaration());
       else
         funcList.emplace_back(parseFunction());
     }
     match(TT_END);
 
-    return ast::TranslationUnit(std::move(funcList), std::move(classList));
+    return ast::TranslationUnit(std::move(funcDeclarations), std::move(funcList), std::move(classList));
   }
 
 private:
@@ -80,6 +84,14 @@ private:
     return cur;
   }
 
+  bool maybeMatch(TokenType type) {
+    if (_currentToken.type == type) {
+      match(type);
+      return true;
+    }
+    return false;
+  }
+
   enum TrailingSeparator
   {
     TRAILING_FORBIDDEN,
@@ -107,7 +119,6 @@ private:
         USER_ASSERT(_currentToken.type != ttBreaker, "Found trailing " << ttSeparator << " in list, expected new element", _currentToken.position);
       }
     }
-
     return std::move(elementList);
   }
 
@@ -143,12 +154,23 @@ private:
     return ast::Type(pureType, pointerDepth);
   }
 
-  ast::Function parseFunction()
+  ast::FunctionDeclaration parseFunctionDeclaration()
   {
+    bool isExtern = maybeMatch(lexer::TT_K_EXTERN);
     ast::Type returnType = parseType();
     std::string_view name = match(TT_IDENT);
     ast::FunctionParameterList parametersNode = parseFunctionParams();
-    ast::InstructionList body = parseCodeBlock();
+    match(TT_SEMI);
+    return ast::FunctionDeclaration(isExtern, std::move(returnType), name, std::move(parametersNode));
+  }
+
+  ast::Function parseFunction()
+  {
+    // TODO use parseFunctionDeclaration
+    ast::Type returnType = parseType();
+    std::string_view name = match(TT_IDENT);
+    ast::FunctionParameterList parametersNode = parseFunctionParams();
+    ast::CodeBlock body = parseCodeBlock();
     return ast::Function(std::move(returnType), name, std::move(parametersNode), std::move(body));
   }
 
@@ -166,7 +188,7 @@ private:
       std::string_view name = match(TT_IDENT);
       if (_currentToken.type == TT_LPAR) {
         ast::FunctionParameterList parametersNode = parseFunctionParams();
-        ast::InstructionList body = parseCodeBlock();
+        ast::CodeBlock body = parseCodeBlock();
         ast::Method method(std::move(type), name, std::move(parametersNode), std::move(body));
         methods.emplace_back(std::move(method), std::move(attribute_specifier));
       }
@@ -189,6 +211,23 @@ private:
     if (_currentToken.type == TT_IDENT) name = match(TT_IDENT);
 
     return ast::FunctionParameter(std::move(type), ast::Variable(std::move(name)));
+  }
+
+  ast::ConditionalStatement parseConditionalStatement() {
+    match(TT_K_IF);
+    match(TT_LPAR);
+    auto condition = parseExpression();
+    match(TT_RPAR);
+    auto ifBody = parseCodeBlock();
+
+    if (_currentToken.type == TT_K_ELSE) {
+      match(TT_K_ELSE);
+      if (_currentToken.type == TT_K_IF) {
+        return ast::ConditionalStatement(std::move(condition), std::move(ifBody), ast::CodeBlock(std::vector<ast::Statement>{ast::Statement(parseConditionalStatement())}));
+      }
+      return ast::ConditionalStatement(std::move(condition), std::move(ifBody), parseCodeBlock());
+    } 
+    else return ast::ConditionalStatement(std::move(condition), std::move(ifBody));
   }
 
   ast::FunctionParameterList parseFunctionParams()
@@ -369,12 +408,26 @@ private:
     return ast::FunctionCall(name, std::move(arguments));
   }
 
-  ast::InstructionList parseCodeBlock()
+  ast::Statement parseStatement() 
+  {
+    if (_currentToken.type == TT_LCURL) return ast::Statement(parseCodeBlock());
+    if (_currentToken.type == TT_K_IF) return ast::Statement(parseConditionalStatement());
+    auto statement = ast::Statement(parseSingleInstruction());
+    match(lexer::TT_SEMI);
+    return statement;
+  }
+
+  ast::CodeBlock parseCodeBlock()
   {
     match(TT_LCURL);
-    auto instructions = parseSeparatedList<ast::Instruction, TT_SEMI, TRAILING_REQUIRED, TT_RCURL>([this]() { return parseSingleInstruction(); });
+    std::vector<ast::Statement> statements;
+    while (_currentToken.type != TT_RCURL)
+    {
+      statements.push_back(parseStatement());
+      maybeMatch(TT_SEMI);
+    }
     match(TT_RCURL);
-    return ast::InstructionList(std::move(instructions));
+    return ast::CodeBlock(std::move(statements)); 
   }
 
 private:

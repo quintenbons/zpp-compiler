@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "dbg/errors.hpp"
+#include "dbg/iohelper.hpp"
 
 namespace linking {
 
@@ -20,9 +21,18 @@ static inline std::pair<int, std::string> runLdImpl(const fs::path &objFile,
     return std::make_pair(EXIT_IO_ERROR, "");
   }
 
-  bp::ipstream errStream;
-  std::string command = std::format("ld {}-o {} {}", (isShared ? "-shared " : ""), outputFile.string(), objFile.string());
+  // TODO add an option to force static linking
+  auto execPath = *utils::fs::getExecutableFilePathUnix();
+  auto libPath = execPath.parent_path().parent_path().parent_path() / "stdlib/lib64/";
 
+  bp::ipstream errStream;
+  std::string command = std::format("ld {}-o {} {} -dynamic-linker /lib64/ld-linux-x86-64.so.2 -L {} -rpath {} -lzpp",
+    (isShared ? "-shared " : ""),
+    outputFile.string(), // -o
+    objFile.string(), // input
+    libPath.string(), // -L
+    libPath.string() // -rpath
+  );
   bp::child c(command, bp::std_err > errStream);
 
   std::string line;

@@ -18,6 +18,7 @@ namespace keywords
   constexpr const char KW_ELSE[] = "else";
   constexpr const char KW_WHILE[] = "while";
   constexpr const char KW_RETURN[] = "return";
+  constexpr const char KW_EXTERN[] = "extern";
   constexpr const char KW_CLASS[] = "class";
   constexpr const char KW_PUBLIC[] = "public";
   constexpr const char KW_PROTECTED[] = "protected";
@@ -43,6 +44,7 @@ namespace keywords
     X(TT_K_ELSE, "TT_K_ELSE") \
     X(TT_K_WHILE, "TT_K_WHILE") \
     X(TT_K_RETURN, "TT_K_RETURN") \
+    X(TT_K_EXTERN, "TT_K_EXTERN") \
     X(TT_K_CLASS, "TT_K_CLASS") \
     X(TT_K_PUBLIC, "TT_K_PUBLIC") \
     X(TT_K_PROTECTED, "TT_K_PROTECTED") \
@@ -238,6 +240,7 @@ private:
     if (value == keywords::KW_ELSE) return createToken(TT_K_ELSE, keywords::KW_ELSE);
     if (value == keywords::KW_WHILE) return createToken(TT_K_WHILE, keywords::KW_WHILE);
     if (value == keywords::KW_RETURN) return createToken(TT_K_RETURN, keywords::KW_RETURN);
+    if (value == keywords::KW_EXTERN) return createToken(TT_K_EXTERN, keywords::KW_EXTERN);
     if (value == keywords::KW_CLASS) return createToken(TT_K_CLASS, keywords::KW_CLASS);
     if (value == keywords::KW_PUBLIC) return createToken(TT_K_PUBLIC, keywords::KW_PUBLIC);
     if (value == keywords::KW_PROTECTED) return createToken(TT_K_PROTECTED, keywords::KW_PROTECTED);

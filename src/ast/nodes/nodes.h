@@ -15,12 +15,44 @@
 
 namespace ast {
 
+#define PURE_NODE_LIST                                                         \
+  X(Type)                                                                      \
+  X(Declaration)                                                               \
+  X(FunctionCall)                                                              \
+  X(BinaryOperation)                                                           \
+  X(NumberLiteral)                                                             \
+  X(StringLiteral)                                                             \
+  X(ReturnStatement)                                                           \
+  X(InlineAsmStatement)                                                        \
+  X(ConditionalStatement)                                                      \
+  X(CodeBlock)                                                                 \
+  X(FunctionParameter)                                                         \
+  X(FunctionParameterList)                                                     \
+  X(FunctionDeclaration)                                                       \
+  X(Function)                                                                  \
+  X(Method)                                                                    \
+  X(AccessSpecifier)                                                           \
+  X(Attribute)                                                                 \
+  X(Class)                                                                     \
+  X(TranslationUnit)
+
+#define VARIANT_NODE_LIST                                                      \
+  X(Expression)                                                                \
+  X(Statement)                                                                 \
+  X(Instruction)
+
+#define NODE_LIST                                                              \
+  PURE_NODE_LIST                                                               \
+  VARIANT_NODE_LIST
+
+#define X(node)                                                                \
+  class node;
+NODE_LIST
+#undef X
+
 enum class Visibility { Public, Protected, Private };
 constexpr Visibility allVisibilities[] = {
     Visibility::Public, Visibility::Protected, Visibility::Private};
-
-class Expression;
-class FunctionCall;
 
 class Type : public interface::AstNode<Type> {
 public:
@@ -36,7 +68,7 @@ public:
   inline const scopes::TypeDescription *getTypeDescription() const {
     if (description)
       return description;
-    THROW("TypeDescription not set");
+    THROW("TypeDescription not set for type " << fullName());
   }
   inline std::string fullName() const {
     return std::string(name) + std::string(pointerDepth, '*');
@@ -147,7 +179,7 @@ public:
                                   scopes::GeneralPurposeRegister targetRegister) const {
     (void)generator;
     (void)targetRegister;
-    THROW("FunctionCall loadValueInRegister Not implemented");
+    TODO("FunctionCall loadValueInRegister Not implemented");
   }
 
 private:
@@ -282,14 +314,11 @@ private:
   StringLiteral asmBlock;
   std::vector<BindingRequest> requests;
 };
-
 class Instruction : public interface::AstNode<Instruction> {
 public:
   static constexpr const char *node_name = "Node_Instruction";
   using InstructionVariant =
-      std::variant<ReturnStatement, InlineAsmStatement, Declaration, Expression
-                   // Definition,
-                   >;
+      std::variant<ReturnStatement, InlineAsmStatement, Declaration, Expression>;
 
 public:
   template <typename T>
@@ -305,13 +334,16 @@ private:
   InstructionVariant instr;
 };
 
-class InstructionList : public interface::AstNode<InstructionList> {
+
+
+
+class CodeBlock : public interface::AstNode<CodeBlock> {
 public:
-  static constexpr const char *node_name = "Node_InstructionList";
+  static constexpr const char *node_name = "Node_CodeBlock";
 
 public:
-  InstructionList(std::vector<Instruction> &&instructions)
-      : instructions(std::move(instructions)) {}
+  CodeBlock(std::vector<Statement> &&statements)
+      : statements(std::move(statements)) {}
 
   inline void debug(size_t depth) const;
 
@@ -319,9 +351,47 @@ public:
 
   inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const;
 
+  inline scopes::Scope &getOrCreateScope(scopes::ScopeStack &scopeStack,
+                                         scopes::Scope &scope) {
+    if (!this->scope) {
+      this->scope = &scopeStack.createChildScope(&scope);
+    }
+    return *this->scope;
+  }
 private:
-  std::vector<Instruction> instructions;
+  std::vector<Statement> statements;
+  scopes::Scope *scope = nullptr;
 };
+
+
+class ConditionalStatement : public interface::AstNode<ConditionalStatement> {
+public:
+  static constexpr const char *node_name = "Node_ConditionalStatement";
+
+public:
+  ConditionalStatement(Expression &&condition, CodeBlock &&ifBody,
+                       CodeBlock &&elseBody)
+      : condition(std::move(condition)), ifBody(std::move(ifBody)),
+        elseBody(std::move(elseBody)) {} 
+
+  ConditionalStatement(Expression &&condition, CodeBlock &&ifBody)
+      : condition(std::move(condition)), ifBody(std::move(ifBody)) {}
+
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+private:
+  Expression condition;
+  CodeBlock ifBody;
+  std::optional<CodeBlock> elseBody;
+};
+
+
+
 
 class FunctionParameter : public interface::AstNode<FunctionParameter> {
 public:
@@ -384,13 +454,35 @@ private:
   std::vector<FunctionParameter> parameters;
 };
 
+class FunctionDeclaration : public interface::AstNode<Function> {
+public:
+  static constexpr const char *node_name = "Node_FunctionDeclaration";
+
+public:
+  FunctionDeclaration(bool isExtern, Type &&returnType, std::string_view name, FunctionParameterList &&params)
+      : isExtern(isExtern), returnType(returnType), name(name), params(params) {}
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+private:
+  bool isExtern;
+  Type returnType;
+  std::string_view name;
+  FunctionParameterList params;
+  const scopes::FunctionDescription *description = nullptr;
+};
+
 class Function : public interface::AstNode<Function> {
 public:
   static constexpr const char *node_name = "Node_Function";
 
 public:
   Function(Type &&returnType, std::string_view name,
-           FunctionParameterList &&params, InstructionList &&body)
+           FunctionParameterList &&params, CodeBlock &&body)
       : returnType(returnType), name(name), params(params), body(std::move(body)) {}
 
   inline void debug(size_t depth) const;
@@ -403,7 +495,7 @@ private:
   Type returnType;
   std::string_view name;
   FunctionParameterList params;
-  InstructionList body;
+  CodeBlock body;
   const scopes::FunctionDescription *description = nullptr;
 };
 
@@ -413,7 +505,7 @@ public:
 
 public:
   Method(Type &&returnType, std::string_view name,
-         FunctionParameterList &&params, InstructionList &&body)
+         FunctionParameterList &&params, CodeBlock &&body)
       : returnType(returnType), name(name), params(params), body(std::move(body)) {}
 
   inline void debug(size_t depth) const;
@@ -424,7 +516,7 @@ private:
   Type returnType;
   std::string_view name;
   FunctionParameterList params;
-  InstructionList body;
+  CodeBlock body;
 };
 
 class AccessSpecifier : public interface::AstNode<AccessSpecifier> {
@@ -464,14 +556,34 @@ private:
   MethodList methods;
 };
 
+class Statement: public interface::AstNode<Statement> {
+  public:
+    static constexpr const char *node_name = "Node_Statement";
+    using StatementVariant = std::variant<Instruction, ConditionalStatement, CodeBlock /**, LoopStatement */>;
+
+  public:
+    template <typename T>
+    Statement(T &&statement) : statement(std::forward<T>(statement)) {}
+
+    inline void debug(size_t depth) const;
+
+    inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+    inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const;
+
+  private:
+    StatementVariant statement;
+};
+
 class TranslationUnit : public interface::AstNode<TranslationUnit> {
 public:
   static constexpr const char *node_name = "Node_TranslationUnit";
 
 public:
-  TranslationUnit(std::vector<Function> &&functions,
+  TranslationUnit(std::vector<FunctionDeclaration> &&functionDeclarations,
+                  std::vector<Function> &&functions,
                   std::vector<Class> &&classes)
-      : functions(functions), classes(classes) {}
+      : functionDeclarations(functionDeclarations), functions(functions), classes(classes) {}
 
   inline void debug(size_t depth) const;
 
@@ -482,42 +594,9 @@ public:
   inline bool isDecorated() const { return true; }
 
 private:
+  std::vector<FunctionDeclaration> functionDeclarations;
   std::vector<Function> functions;
   std::vector<Class> classes;
 };
-
-#define Y(T) X(T, T::node_name)
-#define PURE_NODE_LIST                                                         \
-  Y(Type)                                                                      \
-  Y(Declaration)                                                               \
-  Y(FunctionCall)                                                              \
-  Y(BinaryOperation)                                                           \
-  Y(NumberLiteral)                                                             \
-  Y(StringLiteral)                                                             \
-  Y(ReturnStatement)                                                           \
-  Y(InlineAsmStatement)                                                        \
-  Y(InstructionList)                                                           \
-  Y(FunctionParameter)                                                         \
-  Y(FunctionParameterList)                                                     \
-  Y(Function)                                                                  \
-  Y(Method)                                                                    \
-  Y(AccessSpecifier)                                                           \
-  Y(Attribute)                                                                 \
-  Y(Class)                                                                     \
-  Y(TranslationUnit)
-
-#define VARIANT_NODE_LIST                                                      \
-  Y(Expression)                                                                \
-  Y(Instruction)
-
-#define NODE_LIST                                                              \
-  PURE_NODE_LIST                                                               \
-  VARIANT_NODE_LIST
-
-#define X(node, str)                                                           \
-  inline const char *nodeToStr(const node &) { return str; }
-
-NODE_LIST
-#undef X
 
 } /* namespace ast */

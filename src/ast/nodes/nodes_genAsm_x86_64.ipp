@@ -15,15 +15,15 @@ static constexpr auto INDENT = codegen::NasmGenerator_x86_64::INDENT;
 } // namespace
 
 inline void Instruction::genAsm_x86_64(
-    codegen::NasmGenerator_x86_64 &evaluator) const {
-  std::visit([&evaluator](const auto &node) { node.genAsm_x86_64(evaluator); },
+    codegen::NasmGenerator_x86_64 &generator) const {
+  std::visit([&generator](const auto &node) { node.genAsm_x86_64(generator); },
              instr);
 }
 
-inline void InstructionList::genAsm_x86_64(
-    codegen::NasmGenerator_x86_64 &evaluator) const {
-  for (const auto &instr : instructions) {
-    instr.genAsm_x86_64(evaluator);
+inline void CodeBlock::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  for (const auto &instr : statements) {
+    instr.genAsm_x86_64(generator);
   }
 }
 
@@ -37,6 +37,34 @@ inline void FunctionCall::genAsm_x86_64(
     TODO("Implement pushing arguments on the stack");
   }
   generator.emitCall(name);
+}
+
+inline void ConditionalStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  auto elseLabel = generator.generateUniqueLabel("else");
+  auto endIfLabel = generator.generateUniqueLabel("end_if");
+  std::string_view conditionFailLabel = elseBody.has_value() ? elseLabel : endIfLabel;
+
+  {
+    auto condRegGuard = generator.regSet().acquireGuard();
+    condition.loadValueInRegister(generator, condRegGuard->reg);
+    generator.emitConditionalJump(conditionFailLabel, scopes::getProperRegisterFromID64(condRegGuard->reg));
+  }
+
+  ifBody.genAsm_x86_64(generator);
+
+  if (elseBody) {
+    generator.emitJump(endIfLabel);
+    generator.emitLabel(elseLabel);
+    elseBody->genAsm_x86_64(generator);
+  }
+
+  generator.emitLabel(endIfLabel);
+}
+
+inline void Statement::genAsm_x86_64(
+    codegen::NasmGenerator_x86_64 &generator) const {
+  std::visit([&generator](const auto &node) { node.genAsm_x86_64(generator); },
+             statement);
 }
 
 inline void ReturnStatement::genAsm_x86_64(
@@ -73,6 +101,11 @@ inline void Declaration::genAsm_x86_64(
   }
 }
 
+inline void FunctionDeclaration::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  if (isExtern) generator.emitExternDirective(name);
+  else TODO("Implement non-extern declarations");
+}
+
 inline void Function::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
   generator.emitGlobalDirective(name);
   generator.emitFunctionLabel(name);
@@ -91,9 +124,13 @@ inline void Expression::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) 
 }
 
 inline std::string
-TranslationUnit::genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
+TranslationUnit::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  for (auto &funcDecl : functionDeclarations) {
+    funcDecl.genAsm_x86_64(generator);
+  }
+
   for (auto &func : functions) {
-    func.genAsm_x86_64(evaluator);
+    func.genAsm_x86_64(generator);
   }
 
   for (auto &classNode : classes) {
@@ -102,7 +139,7 @@ TranslationUnit::genAsm_x86_64(codegen::NasmGenerator_x86_64 &evaluator) const {
   }
 
   std::stringstream asmCode;
-  evaluator.generateAsmCode(asmCode);
+  generator.generateAsmCode(asmCode);
 
   return asmCode.str();
 }

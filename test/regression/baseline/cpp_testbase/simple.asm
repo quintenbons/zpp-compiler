@@ -5,16 +5,20 @@ section .rodata
 section .bss
 
 section .text
-	global main
-	global _start
+
+	global main:function
+	global _start:function
 
 _start:
 	call main
-	mov rdi, rax                 ; Exit code (0) expects return of main to be put in rax for now
+	mov rdi, rax            ; Exit code (0) expects return of main to be put in rax for now
 	mov rax, 60                  ; Syscall number for exit (60)
 	syscall                      ; Make the syscall
 
 main:
-	mov rbx, 1
-	ret
+	push rbp                 ; Save the base pointer
+	mov rbp, rsp              ; Set base pointer to current stack pointer
+	mov rax, 1 ; Loading number literal
+	mov rsp, rbp              ; Restoring stack pointer
+	pop rbp                   ; Restore the base pointer
 	ret

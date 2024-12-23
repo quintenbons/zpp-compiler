@@ -1,7 +1,7 @@
 #pragma once
 
+#include <format>
 #include <sstream>
-#include "ast/scopes/types.hpp"
 #include "ast/scopes/registers.hpp"
 #include "ast/scopes/memory_x86_64.hpp"
 #include "ast/literalTypes.hpp"
@@ -18,6 +18,7 @@ public:
   struct TextSection {
     std::stringstream sectionTitle;
     std::stringstream globalDeclarations;
+    std::stringstream externDeclarations;
     std::stringstream preBody;
     std::stringstream body;
   };
@@ -69,6 +70,10 @@ public:
     textSection.body << INDENT << "mov " << scopes::regToStr(scopes::Register::REG_RBP) << ", " << scopes::regToStr(scopes::Register::REG_RSP) << "              ; Set base pointer to current stack pointer" << ENDL;
   }
 
+  void emitExternDirective(const std::string_view &name) {
+    textSection.externDeclarations << INDENT << "extern " << name << ":function" << ENDL;
+  }
+
   void emitGlobalDirective(const std::string_view &name) {
     textSection.globalDeclarations << INDENT << "global " << name << ":function" << ENDL;
   }
@@ -81,9 +86,23 @@ public:
     textSection.body << INDENT << "pop " << scopes::regToStr(scopes::Register::REG_RBP) << "                   ; Restore the base pointer" << ENDL;
   }
 
+  void emitLabel(const std::string_view &name) {
+    textSection.body << name << ":" << ENDL;
+  }
+
+  auto emitUniqueLabel(const std::string_view &name = "") {
+    auto uniqueLabel = generateUniqueLabel(name);
+    emitLabel(uniqueLabel);
+    return uniqueLabel;
+  }
+
+  std::string generateUniqueLabel(std::string_view suffix = "") {
+    return std::format("._U{}_{}", uniqueLabelCount++, suffix);
+  }
+
   void emitFunctionLabel(const std::string_view &name) {
     containsMain = containsMain || name == "main";
-    textSection.body << name << ":" << ENDL;
+    emitLabel(name);
   }
 
   void emitReturnInstruction() {
@@ -159,6 +178,24 @@ public:
     textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", " << value << " ; Loading number literal" << ENDL;
   }
 
+  void emitTest(scopes::Register reg) {
+    textSection.body << INDENT << "test " << reg << "," << reg << ENDL;
+  }
+
+  void emitJump(std::string_view label) {
+    textSection.body << INDENT << "jmp " << label << ENDL;
+  }
+
+  void emitConditionalJump(std::string_view label, scopes::Register reg) {
+    emitTest(reg);
+    textSection.body << INDENT << "jz " << label << ENDL;
+  }
+
+  void emitConditionalJumpNonZero(std::string_view label, scopes::Register reg) {
+    emitTest(reg);
+    textSection.body << INDENT << "jnz" << label << ENDL;
+  }
+
   void generateAsmCode(std::ostream &asmCode) {
     if (containsMain) {
       emitStartProcedure();
@@ -174,6 +211,7 @@ public:
 
     asmCode << ENDL;
     asmCode << textSection.sectionTitle.str() << ENDL;
+    asmCode << textSection.externDeclarations.str() << ENDL;
     asmCode << textSection.globalDeclarations.str() << ENDL;
     asmCode << textSection.preBody.str() << ENDL;
     asmCode << textSection.body.str();
@@ -182,6 +220,7 @@ public:
   scopes::GPRegisterSet &regSet() { return registerSet; }
 
 private:
+  uint32_t uniqueLabelCount = 0;
   bool containsMain = false;
   std::stringstream dataSection;
   std::stringstream RODataSection;

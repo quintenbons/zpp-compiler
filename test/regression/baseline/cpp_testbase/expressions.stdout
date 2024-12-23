@@ -1,0 +1,82 @@
+/home/qbons/zpp-compiler/cpp_testbase/expressions.cpp
+== Parsing
+
+== Done parsing
+[35m[Node_TranslationUnit] Function count: 1
+[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
+[0m[35m    [Node_Type] int
+[0m[35m    [Node_FunctionParameterList] ParameterCount: 0
+[0m[35m    [Node_CodeBlock] InstructionCount: 3
+[0m[35m      [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m        [Node_NumberLiteral] 12345
+[0m[35m      [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m        [Node_BinaryOperation] +
+[0m[35m          [Node_NumberLiteral] 41
+[0m[35m          [Node_NumberLiteral] 1
+[0m[35m      [Node_ReturnStatement] 
+[0m[35m      [Node_NumberLiteral] 0
+[0m[35m[Node_TranslationUnit] Class count: 0
+[0m
+== Decorating
+[35mScopeStack of 2 scopes
+[0m[35m[Scope] id=0 ; parent=0
+  [Type] id=2 ; name=char ; size=1
+  [Type] id=2 ; name=int ; size=4
+  [Type] id=0 ; name=void ; size=0
+  [Function] id=2 name=main ; returnType=int ; parameters=
+  [Function] id=1 name=printnum ; returnType=void ; parameters=int 
+[0m[35m[Scope] id=1 ; parent=0
+[0m
+== Done decorating
+[35m[Node_TranslationUnit] Function count: 1
+[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
+[0m[35m    [Node_Type] int
+[0m[34m      [Decoration] TypeDescription: int ; Size: 4 ; Id: 2
+[0m[35m    [Node_FunctionParameterList] ParameterCount: 0
+[0m[35m    [Node_CodeBlock] InstructionCount: 3
+[0m[35m      [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m        [Node_NumberLiteral] 12345
+[0m[35m      [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m        [Node_BinaryOperation] +
+[0m[35m          [Node_NumberLiteral] 41
+[0m[35m          [Node_NumberLiteral] 1
+[0m[35m      [Node_ReturnStatement] 
+[0m[35m      [Node_NumberLiteral] 0
+[0m[34m    [Decoration] FunctionDescription: main ; Id: 2
+[0m[35m[Node_TranslationUnit] Class count: 0
+[0m
+== Generating code
+== Generated asm to a.asm:
+section .data
+
+section .rodata
+
+section .bss
+
+section .text
+	extern printnum:function
+
+	global main:function
+	global _start:function
+
+_start:
+	call main
+	mov rdi, rax            ; Exit code (0) expects return of main to be put in rax for now
+	mov rax, 60                  ; Syscall number for exit (60)
+	syscall                      ; Make the syscall
+
+main:
+	push rbp                 ; Save the base pointer
+	mov rbp, rsp              ; Set base pointer to current stack pointer
+	mov rdi, 12345 ; Loading number literal
+	call printnum
+	mov rdi, 41 ; Loading number literal
+	mov rax, 1 ; Loading number literal
+	add rdi, rax
+	call printnum
+	mov rax, 0 ; Loading number literal
+	mov rsp, rbp              ; Restoring stack pointer
+	pop rbp                   ; Restore the base pointer
+	ret
+== Generated .o as a.o:
+== Generating exe as a.out:
