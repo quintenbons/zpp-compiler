@@ -1,4 +1,4 @@
-/home/qbons/zpp-compiler/cpp_testbase/simple.cpp
+/home/qbons/zpp-compiler/cpp_testbase/scopes.cpp
 == Parsing
 
 == Done parsing
@@ -6,19 +6,30 @@
 [0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
 [0m[35m    [Node_Type] int
 [0m[35m    [Node_FunctionParameterList] ParameterCount: 0
-[0m[35m    [Node_CodeBlock] InstructionCount: 1
-[0m[35m      [Node_ReturnStatement] 
-[0m[35m      [Node_NumberLiteral] 1
+[0m[35m    [Node_CodeBlock] InstructionCount: 2
+[0m[35m      [Node_Declaration] Type: int ; Assignment: 0
+[0m[35m        [Node_Variable] a
+[0m[35m      [Node_CodeBlock] InstructionCount: 2
+[0m[35m        [Node_Declaration] Type: int ; Assignment: 0
+[0m[35m          [Node_Variable] b
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_Declaration] Type: int ; Assignment: 0
+[0m[35m            [Node_Variable] c
 [0m[35m[Node_TranslationUnit] Class count: 0
 [0m
 == Decorating
-[35mScopeStack of 2 scopes
+[35mScopeStack of 4 scopes
 [0m[35m[Scope] id=0 ; parent=0
   [Type] id=2 ; name=char ; size=1
   [Type] id=2 ; name=int ; size=4
   [Type] id=0 ; name=void ; size=0
   [Function] id=1 name=main ; returnType=int ; parameters=
 [0m[35m[Scope] id=1 ; parent=0
+  [Variable] id=1 ; name=a ; location=LocalStackOffset: byteSize=4, byteOffset=4
+[0m[35m[Scope] id=2 ; parent=1
+  [Variable] id=2 ; name=b ; location=LocalStackOffset: byteSize=4, byteOffset=4
+[0m[35m[Scope] id=3 ; parent=2
+  [Variable] id=3 ; name=c ; location=LocalStackOffset: byteSize=4, byteOffset=4
 [0m
 == Done decorating
 [35m[Node_TranslationUnit] Function count: 1
@@ -26,9 +37,18 @@
 [0m[35m    [Node_Type] int
 [0m[34m      [Decoration] TypeDescription: int ; Size: 4 ; Id: 2
 [0m[35m    [Node_FunctionParameterList] ParameterCount: 0
-[0m[35m    [Node_CodeBlock] InstructionCount: 1
-[0m[35m      [Node_ReturnStatement] 
-[0m[35m      [Node_NumberLiteral] 1
+[0m[35m    [Node_CodeBlock] InstructionCount: 2
+[0m[35m      [Node_Declaration] Type: int ; Assignment: 0
+[0m[35m        [Node_Variable] a
+[0m[34m          [Decoration] VariableDescription: Id: 1
+[0m[35m      [Node_CodeBlock] InstructionCount: 2
+[0m[35m        [Node_Declaration] Type: int ; Assignment: 0
+[0m[35m          [Node_Variable] b
+[0m[34m            [Decoration] VariableDescription: Id: 2
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_Declaration] Type: int ; Assignment: 0
+[0m[35m            [Node_Variable] c
+[0m[34m              [Decoration] VariableDescription: Id: 3
 [0m[34m    [Decoration] FunctionDescription: main ; Id: 1
 [0m[35m[Node_TranslationUnit] Class count: 0
 [0m
@@ -54,7 +74,9 @@ _start:
 main:
 	push rbp                 ; Save the base pointer
 	mov rbp, rsp              ; Set base pointer to current stack pointer
-	mov rax, 1 ; Loading number literal
+	sub rsp, 4 ; Creating space on the stack
+	sub rsp, 4 ; Creating space on the stack
+	sub rsp, 4 ; Creating space on the stack
 	mov rsp, rbp              ; Restoring stack pointer
 	pop rbp                   ; Restore the base pointer
 	ret

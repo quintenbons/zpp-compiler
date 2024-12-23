@@ -5,6 +5,7 @@ section .rodata
 section .bss
 
 section .text
+	extern printnum:function
 
 	global main:function
 	global _start:function
@@ -18,7 +19,13 @@ _start:
 main:
 	push rbp                 ; Save the base pointer
 	mov rbp, rsp              ; Set base pointer to current stack pointer
+	mov rdi, 12345 ; Loading number literal
+	call printnum
+	mov rdi, 41 ; Loading number literal
 	mov rax, 1 ; Loading number literal
+	add rdi, rax
+	call printnum
+	mov rax, 0 ; Loading number literal
 	mov rsp, rbp              ; Restoring stack pointer
 	pop rbp                   ; Restore the base pointer
 	ret

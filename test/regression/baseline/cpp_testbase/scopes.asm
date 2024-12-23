@@ -18,7 +18,9 @@ _start:
 main:
 	push rbp                 ; Save the base pointer
 	mov rbp, rsp              ; Set base pointer to current stack pointer
-	mov rax, 1 ; Loading number literal
+	sub rsp, 4 ; Creating space on the stack
+	sub rsp, 4 ; Creating space on the stack
+	sub rsp, 4 ; Creating space on the stack
 	mov rsp, rbp              ; Restoring stack pointer
 	pop rbp                   ; Restore the base pointer
 	ret

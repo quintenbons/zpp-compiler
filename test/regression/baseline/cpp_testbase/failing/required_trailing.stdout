@@ -1,5 +1,5 @@
 /home/qbons/zpp-compiler/cpp_testbase/failing/required_trailing.cpp
 == Parsing
-[Line: 3, Offset: 0] Build failed: Expected trailing TT_SEMI
+[Line: 3, Offset: 0] Build failed: Unexpected token type=[TT_RCURL] for value=[}] expected=[TT_SEMI]
 
 ^
