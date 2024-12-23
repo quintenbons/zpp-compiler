@@ -14,11 +14,14 @@
 
 int printf(const char *format, ...);
 std::size_t strlen(const char* str);
-int print(const char *message); // not in the C nor C++ standard, just useful for us...
 ssize_t write(int fd, const void *buf, size_t count);
 [[noreturn]] void exit(int status);
 void *malloc(size_t size);
 void free(void *ptr);
+
+// not in the C nor C++ standard, just useful for us...
+int print(const char *message);
+int printnum(int num);
 
 
 

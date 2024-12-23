@@ -28,6 +28,7 @@ namespace ast {
   X(CodeBlock)                                                                 \
   X(FunctionParameter)                                                         \
   X(FunctionParameterList)                                                     \
+  X(FunctionDeclaration)                                                       \
   X(Function)                                                                  \
   X(Method)                                                                    \
   X(AccessSpecifier)                                                           \
@@ -67,7 +68,7 @@ public:
   inline const scopes::TypeDescription *getTypeDescription() const {
     if (description)
       return description;
-    THROW("TypeDescription not set");
+    THROW("TypeDescription not set for type " << fullName());
   }
   inline std::string fullName() const {
     return std::string(name) + std::string(pointerDepth, '*');
@@ -453,6 +454,28 @@ private:
   std::vector<FunctionParameter> parameters;
 };
 
+class FunctionDeclaration : public interface::AstNode<Function> {
+public:
+  static constexpr const char *node_name = "Node_FunctionDeclaration";
+
+public:
+  FunctionDeclaration(bool isExtern, Type &&returnType, std::string_view name, FunctionParameterList &&params)
+      : isExtern(isExtern), returnType(returnType), name(name), params(params) {}
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+private:
+  bool isExtern;
+  Type returnType;
+  std::string_view name;
+  FunctionParameterList params;
+  const scopes::FunctionDescription *description = nullptr;
+};
+
 class Function : public interface::AstNode<Function> {
 public:
   static constexpr const char *node_name = "Node_Function";
@@ -557,9 +580,10 @@ public:
   static constexpr const char *node_name = "Node_TranslationUnit";
 
 public:
-  TranslationUnit(std::vector<Function> &&functions,
+  TranslationUnit(std::vector<FunctionDeclaration> &&functionDeclarations,
+                  std::vector<Function> &&functions,
                   std::vector<Class> &&classes)
-      : functions(functions), classes(classes) {}
+      : functionDeclarations(functionDeclarations), functions(functions), classes(classes) {}
 
   inline void debug(size_t depth) const;
 
@@ -570,6 +594,7 @@ public:
   inline bool isDecorated() const { return true; }
 
 private:
+  std::vector<FunctionDeclaration> functionDeclarations;
   std::vector<Function> functions;
   std::vector<Class> classes;
 };

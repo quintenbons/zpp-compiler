@@ -103,6 +103,16 @@ inline void FunctionParameterList::debug(size_t depth) const {
   }
 }
 
+inline void FunctionDeclaration::debug(size_t depth) const {
+  logNode(depth, "ReturnType: ", returnType.fullName(), " ; Name: ", name,
+          " ; ParamCount: ", params.size());
+  returnType.debug(depth + 1);
+  params.debug(depth + 1);
+  if (description)
+    logDecoration(depth + 1, "FunctionDescription: ", description->name,
+                  " ; Id: ", description->functionId);
+}
+
 inline void Function::debug(size_t depth) const {
   logNode(depth, "ReturnType: ", returnType.fullName(), " ; Name: ", name,
           " ; ParamCount: ", params.size());

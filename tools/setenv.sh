@@ -57,7 +57,7 @@ zpp_build() {
 }
 
 zpp_build_stdlib() {
-  z++ --shared $ZPP_LIBZPP_PATH/stdlibc.zpp -o $ZPP_LIB64_PATH/$ZPP_LIB_NAME
+  z++ --shared $ZPP_LIBZPP_PATH/stdlibc.cpp -o $ZPP_LIB64_PATH/$ZPP_LIB_NAME
 
   if [ $? -eq 0 ]; then
     echo "Built $ZPP_LIB_NAME at $ZPP_LIB64_PATH/$ZPP_LIB_NAME"

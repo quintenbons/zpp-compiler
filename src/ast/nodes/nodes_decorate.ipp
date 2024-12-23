@@ -118,7 +118,21 @@ inline void ConditionalStatement::decorate(scopes::ScopeStack &scopeStack, scope
   }
 }
 
+inline void FunctionDeclaration::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  returnType.decorate(scopeStack, scope);
+  params.decorate(scopeStack, scope);
+
+  std::vector<const scopes::TypeDescription *> paramTypes;
+  for (auto &param : params) {
+    paramTypes.push_back(param.getTypeDescription());
+  }
+
+  scopeStack.addFunction(name, paramTypes, returnType.getTypeDescription(), scope);
+  description = scope.findFunction(name);
+}
+
 inline void Function::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  // TODO: use FunctionDeclaration here as an attribute. a bit of refactoring probably
   scopes::Scope &newScope = body.getOrCreateScope(scopeStack, scope);
   returnType.decorate(scopeStack, newScope);
   params.decorate(scopeStack, newScope);
@@ -156,6 +170,10 @@ inline void Class::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope
 
 inline void TranslationUnit::decorate(scopes::ScopeStack &scopeStack,
                                scopes::Scope &scope) {
+  for (auto &funcDecl : functionDeclarations) {
+    funcDecl.decorate(scopeStack, scope);
+  }
+
   for (auto &func : functions) {
     func.decorate(scopeStack, scope);
   }
