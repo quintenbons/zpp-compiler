@@ -1,0 +1,5 @@
+/home/qbons/zpp-compiler/cpp_testbase/failing/just_slash.cpp
+== Parsing
+[Line: 0, Offset: 2] Build failed: Unexpected token type=[TT_SLASH] for value=[/] expected=[TT_IDENT]
+ /
+ ^

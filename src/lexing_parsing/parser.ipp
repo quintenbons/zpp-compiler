@@ -47,16 +47,23 @@ public:
   }
 
 private:
-  BinOp getBinaryOperation(TokenType op) {
+  static BinOp getBinaryOperation(TokenType op) {
     switch (op) {
       case TT_PLUS: return BinOp::ADD;
       case TT_MINUS: return BinOp::SUBSTRACT;
       case TT_STAR: return BinOp::MULTIPLY;
       case TT_SLASH: return BinOp::DIVIDE;
+      case TT_CMP_EQ: return BinOp::CMP_EQ;
+      case TT_CMP_NEQ: return BinOp::CMP_NEQ;
+      case TT_CMP_LEQ: return BinOp::CMP_LEQ;
+      case TT_CMP_GEQ: return BinOp::CMP_GEQ;
+      case TT_CMP_LT: return BinOp::CMP_LT;
+      case TT_CMP_GT: return BinOp::CMP_GT;
       default: return BinOp::NOT_AN_OPERATION;
     }
   }
-  bool isBinaryOp(TokenType op) { return getBinaryOperation(op) != BinOp::NOT_AN_OPERATION; }
+
+  static bool isBinaryOp(TokenType op) { return getBinaryOperation(op) != BinOp::NOT_AN_OPERATION; }
 
   inline std::string_view getRawUntil(char breaker)
   {

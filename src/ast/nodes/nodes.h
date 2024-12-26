@@ -193,7 +193,19 @@ private:
 
 class BinaryOperation: interface::AstNode<BinaryOperation> {
 public:
-  enum class Operation: char { NOT_AN_OPERATION='N', ADD='+', SUBSTRACT='-', MULTIPLY='*', DIVIDE='/' };
+  enum class Operation : char {
+    NOT_AN_OPERATION = 'N',
+    ADD = '+',
+    SUBSTRACT = '-',
+    MULTIPLY = '*',
+    DIVIDE = '/',
+    CMP_EQ = static_cast<char>(codegen::CMP_OPERATION::EQ),
+    CMP_NEQ = static_cast<char>(codegen::CMP_OPERATION::NEQ),
+    CMP_LEQ = static_cast<char>(codegen::CMP_OPERATION::LEQ),
+    CMP_GEQ = static_cast<char>(codegen::CMP_OPERATION::GEQ),
+    CMP_LT = static_cast<char>(codegen::CMP_OPERATION::LT),
+    CMP_GT = static_cast<char>(codegen::CMP_OPERATION::GT),
+  };
 
   static constexpr const char *node_name = "Node_BinaryOperation";
 

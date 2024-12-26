@@ -2,13 +2,36 @@
 
 #include <format>
 #include <sstream>
+#include <string>
+#include <map>
+
 #include "ast/scopes/registers.hpp"
 #include "ast/scopes/memory_x86_64.hpp"
 #include "ast/literalTypes.hpp"
 #include "codegen/GPRegisterSet.hpp"
+#include "dbg/errors.hpp"
 
 namespace codegen
 {
+
+enum class CMP_OPERATION: char {
+  EQ='=',
+  NEQ='~',
+  LEQ='l',
+  GEQ='g',
+  LT='<',
+  GT='>',
+};
+
+static const std::map<CMP_OPERATION, const char*> opToMnemonicCC = {
+  {CMP_OPERATION::EQ, "e"},
+  {CMP_OPERATION::NEQ, "ne"},
+  {CMP_OPERATION::LEQ, "le"},
+  {CMP_OPERATION::GEQ, "ge"},
+  {CMP_OPERATION::LT, "l"},
+  {CMP_OPERATION::GT, "g"},
+};
+
 class NasmGenerator_x86_64
 {
 public:
@@ -178,8 +201,20 @@ public:
     textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", " << value << " ; Loading number literal" << ENDL;
   }
 
+  void emitTest(scopes::Register reg1, scopes::Register reg2) {
+    textSection.body << INDENT << "test " << reg1 << "," << reg2 << ENDL;
+  }
+
   void emitTest(scopes::Register reg) {
-    textSection.body << INDENT << "test " << reg << "," << reg << ENDL;
+    emitTest(reg, reg);
+  }
+
+  void emitCmp(scopes::Register reg1, scopes::Register reg2) {
+    textSection.body << INDENT << "cmp " << reg1 << "," << reg2 << ENDL;
+  }
+
+  void emitCmp(scopes::Register reg) {
+    emitCmp(reg, reg);
   }
 
   void emitJump(std::string_view label) {
@@ -194,6 +229,11 @@ public:
   void emitConditionalJumpNonZero(std::string_view label, scopes::Register reg) {
     emitTest(reg);
     textSection.body << INDENT << "jnz" << label << ENDL;
+  }
+
+  void emitSetCC(scopes::Register tgt, CMP_OPERATION op) {
+    DEBUG_ASSERT(opToMnemonicCC.contains(op), "Nasmx86 generator received unexpected operation type on emit setx: " << ((char)op));
+    textSection.body << INDENT << "set" << opToMnemonicCC.at(op) << " " << tgt << ENDL;
   }
 
   void generateAsmCode(std::ostream &asmCode) {

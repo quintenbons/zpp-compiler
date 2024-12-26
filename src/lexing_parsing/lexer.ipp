@@ -1,11 +1,13 @@
 #pragma once
 
+#include <optional>
 #include <ostream>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
 
 #include "dbg/errors.hpp"
+#include "dbg/logger.hpp"
 
 namespace lexer
 {
@@ -63,6 +65,13 @@ namespace keywords
     X(TT_MINUS, "TT_MINUS") \
     X(TT_STAR, "TT_STAR") \
     X(TT_SLASH, "TT_SLASH") \
+    \
+    X(TT_CMP_EQ, "TT_CMP_EQ") \
+    X(TT_CMP_NEQ, "TT_CMP_NEQ") \
+    X(TT_CMP_LEQ, "TT_CMP_LEQ") \
+    X(TT_CMP_GEQ, "TT_CMP_GEQ") \
+    X(TT_CMP_LT, "TT_CMP_LT") \
+    X(TT_CMP_GT, "TT_CMP_GT") \
     \
     X(TT_LBRACK, "TT_LBRACK") \
     X(TT_RBRACK, "TT_RBRACK") \
@@ -140,9 +149,9 @@ public:
   inline std::string_view getRawUntil(char breaker)
   {
     auto startPos = _pos;
-    while (_content[_pos] != breaker)
+    while (peek() != breaker)
     {
-      if (_content[_pos] == '\n') incrementLineCount();
+      if (peek() == '\n') incrementLineCount();
       _pos++;
     }
     return std::string_view(_content.data()+startPos, _pos-startPos);
@@ -154,16 +163,24 @@ public:
     {
       if (skipIgnoredCharacters()) continue;
 
-      char current = _content[_pos];
+      char current = peek();
 
       if (std::isdigit(current)) return number();
       if (std::isalpha(current)) return identifier();
+
+      if (auto doubleChar = peekDoubleCharOperation()) {
+        _pos += 2;
+        return *doubleChar;
+      }
 
       if (current == '=') return createToken(TT_EQUAL, std::string_view(_content.data()+_pos++, 1));
       if (current == '+') return createToken(TT_PLUS, std::string_view(_content.data()+_pos++, 1));
       if (current == '-') return createToken(TT_MINUS, std::string_view(_content.data()+_pos++, 1));
       if (current == '*') return createToken(TT_STAR, std::string_view(_content.data()+_pos++, 1));
       if (current == '/') return createToken(TT_SLASH, std::string_view(_content.data()+_pos++, 1));
+
+      if (current == '<') return createToken(TT_CMP_LT, std::string_view(_content.data()+_pos++, 1));
+      if (current == '>') return createToken(TT_CMP_GT, std::string_view(_content.data()+_pos++, 1));
 
       if (current == '[') return createToken(TT_LBRACK, std::string_view(_content.data()+_pos++, 1));
       if (current == ']') return createToken(TT_RBRACK, std::string_view(_content.data()+_pos++, 1));
@@ -224,6 +241,31 @@ public:
   }
 
 private:
+  size_t numCharsLeft() { return _content.size() - _pos - 1; }
+  bool isEnd() { return !numCharsLeft(); }
+
+  template<size_t lookAhead=0>
+  char peek() {
+    if constexpr (lookAhead > 0)
+      if (numCharsLeft() < lookAhead) return '\0';
+
+    return _content[_pos + lookAhead];
+  }
+
+  std::optional<Token> peekDoubleCharOperation() {
+    if (isEnd()) return std::nullopt;
+
+    char cur = peek<0>();
+    char nxt = peek<1>();
+
+    if (cur == '=' && nxt == '=') return createToken(TT_CMP_EQ, std::string_view(_content.data()+_pos++, 2));
+    if (cur == '!' && nxt == '=') return createToken(TT_CMP_NEQ, std::string_view(_content.data()+_pos++, 2));
+    if (cur == '<' && nxt == '=') return createToken(TT_CMP_LEQ, std::string_view(_content.data()+_pos++, 2));
+    if (cur == '>' && nxt == '=') return createToken(TT_CMP_GEQ, std::string_view(_content.data()+_pos++, 2));
+
+    return std::nullopt;
+  }
+
   Token number()
   {
     auto start = _content.begin() + _pos;
@@ -278,7 +320,7 @@ private:
 
   inline void skipWhitespaces()
   {
-    while (isWhiteSpace(_content[_pos]))
+    while (isWhiteSpace(peek()))
     {
       _pos++;
     }
@@ -286,13 +328,14 @@ private:
 
   inline void incrementLineCount()
   {
+    if (isEnd()) return;
     _lineCount++;
     _lineStartOffset = _pos + 1;
   }
 
   inline void skipNewLines()
   {
-    while (_content[_pos] == '\n')
+    while (peek() == '\n')
     {
       ++_pos;
       incrementLineCount();
@@ -301,18 +344,18 @@ private:
 
   inline void skipComments()
   {
-    if (_content[_pos] == '/' && _content[_pos+1] == '/')
+    if (peek() == '/' && peek<1>() == '/')
     {
       auto lineEnd = std::find(_content.begin() + _pos, _content.end(), '\n');
       _pos = std::distance(_content.begin(), lineEnd) + 1;
       incrementLineCount();
     }
 
-    if (_content[_pos] == '/' && _content[_pos+1] == '*')
+    if (peek() == '/' && peek<1>() == '*')
     {
       _pos = _pos + 2;
 
-      while (_pos < _content.size() - 1 && (_content[_pos] != '*' || _content[_pos+1] != '/'))
+      while (_pos < _content.size() - 1 && (peek() != '*' || peek<1>() != '/'))
       {
         if (_pos == '\n') incrementLineCount();
         ++_pos;
