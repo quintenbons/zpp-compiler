@@ -1,5 +1,5 @@
 #include "ast/nodes/nodes.h"
-#include <iterator>
+#include "ast/scopes/registers.hpp"
 
 namespace ast {
 
@@ -25,15 +25,15 @@ inline void Assign::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scop
 }
 
 inline void Assign::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
-  (void) generator;
-  TODO("Implement " << __PRETTY_FUNCTION__);
+  auto regGuard = generator.regSet().acquireGuard();
+  loadValueInRegister(generator, regGuard->reg);
 }
 
 inline void Assign::loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
                                 scopes::GeneralPurposeRegister targetRegister) const {
-  (void) generator;
-  (void) targetRegister;
-  TODO("Implement " << __PRETTY_FUNCTION__);
+  rhs->loadValueInRegister(generator, targetRegister);
+  auto &varDesc = *lhs->getVariableDescription();
+  generator.emitStoreInMemory(varDesc.location, scopes::getProperRegisterFromID64(targetRegister));
 }
 
 } /* namespace ast */

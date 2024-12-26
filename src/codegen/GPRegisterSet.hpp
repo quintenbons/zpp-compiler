@@ -37,7 +37,7 @@ protected:
   void release(GeneralPurposeRegister reg) {
     size_t idx = static_cast<size_t>(reg);
     DEBUG_ASSERT(takenRegisters.test(idx), "Tried to release general purpose register that was not acquired (double release?) register=" << regToStr(reg));
-    takenRegisters.reset();
+    takenRegisters.reset(idx);
   }
 
   std::optional<GeneralPurposeRegister> acquire() {

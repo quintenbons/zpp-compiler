@@ -49,6 +49,7 @@ int main(int argc, char** argv)
 
   if (options.fullDebugExec) {
     fullDebugExec(options);
+    return 0;
   }
 
   else if (options.preprocessOnly) {

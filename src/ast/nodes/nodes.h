@@ -366,8 +366,9 @@ public:
   static constexpr const char *node_name = "Node_CodeBlock";
 
 public:
-  CodeBlock(std::vector<Statement> &&statements)
-      : statements(std::move(statements)) {}
+  CodeBlock(std::vector<Statement> &&statements, scopes::Scope *givenScope = nullptr)
+      : statements(std::move(statements))
+      , scope(givenScope) {}
 
   inline void debug(size_t depth) const;
 
@@ -378,7 +379,7 @@ public:
   inline scopes::Scope &getOrCreateScope(scopes::ScopeStack &scopeStack,
                                          scopes::Scope &scope) {
     if (!this->scope) {
-      this->scope = &scopeStack.createChildScope(&scope);
+      this->scope = &scopeStack.createChildScope(scope);
     }
     return *this->scope;
   }
@@ -472,6 +473,8 @@ private:
   std::optional<Expression> condition;
   std::optional<Expression> expr;
   CodeBlock body;
+
+  scopes::Scope *loopScope = nullptr;
 };
 
 class FunctionParameter : public interface::AstNode<FunctionParameter> {

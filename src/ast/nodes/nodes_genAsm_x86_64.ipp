@@ -72,8 +72,27 @@ inline void DoStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator)
 }
 
 inline void ForStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
-  (void) generator;
-  TODO("Implement for statement genasm");
+  auto condLabel = generator.generateUniqueLabel("for");
+  auto endLabel = generator.generateUniqueLabel("for.end");
+
+  init.genAsm_x86_64(generator);
+
+  generator.emitLabel(condLabel);
+
+  if (condition) {
+    auto condRegGuard = generator.regSet().acquireGuard();
+    condition->loadValueInRegister(generator, condRegGuard->reg);
+    generator.emitConditionalJump(endLabel, scopes::getProperRegisterFromID64(condRegGuard->reg));
+  }
+
+  body.genAsm_x86_64(generator);
+
+  if (expr) {
+    expr->genAsm_x86_64(generator);
+  }
+
+  generator.emitJump(condLabel);
+  generator.emitLabel(endLabel);
 }
 
 inline void Statement::genAsm_x86_64(

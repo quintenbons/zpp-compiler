@@ -129,6 +129,9 @@ inline void DoStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Scope 
 }
 
 inline void ForStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  DEBUG_ASSERT(loopScope == nullptr, "Scope was already set in For statement, decorate is called multiple times");
+  auto &newScope = scopeStack.createChildScope(scope);
+  (void) newScope;
   init.decorate(scopeStack, scope);
   if (condition) condition->decorate(scopeStack, scope);
   if (expr) expr->decorate(scopeStack, scope);

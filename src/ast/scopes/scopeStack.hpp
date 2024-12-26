@@ -117,7 +117,8 @@ public:
   , _variableId{0}
   , _functionId{0}
   {
-    Scope &rootScope = createChildScope(nullptr);
+    _scopes.push_back(std::make_unique<Scope>(_scopes.size(), nullptr));
+    Scope &rootScope = *_scopes.back();
 
     for (const TypeDescription &description: _types)
     {
@@ -133,10 +134,10 @@ public:
     for (auto &scope: _scopes) scope->logDebug();
   }
 
-  Scope &createChildScope(Scope *parent)
+  Scope &createChildScope(Scope &parent)
   {
-    _scopes.push_back(std::make_unique<Scope>(_scopes.size(), parent));
-    return *_scopes.back().get();
+    _scopes.push_back(std::make_unique<Scope>(_scopes.size(), &parent));
+    return *_scopes.back();
   }
 
   void addLocalVariable(const std::string_view &name, const TypeDescription* type, Scope &scope)
