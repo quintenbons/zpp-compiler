@@ -62,8 +62,21 @@ inline void ConditionalStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &g
 }
 
 inline void WhileStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
-  (void) generator;
-  TODO("Implement while statement genasm");
+  auto condLabel = generator.generateUniqueLabel("while");
+  auto endLabel = generator.generateUniqueLabel("while.end");
+
+  generator.emitLabel(condLabel);
+
+  {
+    auto condRegGuard = generator.regSet().acquireGuard();
+    condition.loadValueInRegister(generator, condRegGuard->reg);
+    generator.emitConditionalJump(endLabel, scopes::getProperRegisterFromID64(condRegGuard->reg));
+  }
+
+  body.genAsm_x86_64(generator);
+
+  generator.emitJump(condLabel);
+  generator.emitLabel(endLabel);
 }
 
 inline void DoStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {

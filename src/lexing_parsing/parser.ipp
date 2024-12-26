@@ -236,11 +236,19 @@ private:
     else return ast::ConditionalStatement(std::move(condition), std::move(ifBody));
   }
 
-  ast::ConditionalStatement parseWhileStatement() {
-    TODO("Implement while statement");
+  ast::WhileStatement parseWhileStatement() {
+    match(TT_K_WHILE);
+    match(TT_LPAR);
+    ast::Expression condition = parseCondition();
+    match(TT_RPAR);
+
+    // TODO: should be statement
+    ast::CodeBlock body = parseCodeBlock();
+
+    return ast::WhileStatement(std::move(condition), std::move(body));
   }
 
-  ast::ConditionalStatement parseDoStatement() {
+  ast::DoStatement parseDoStatement() {
     TODO("Implement while statement");
   }
 
