@@ -186,7 +186,7 @@ inline void WhileStatement::debug(size_t depth) const {
 
 inline void DoStatement::debug(size_t depth) const {
   logNode(depth);
-  condition.debug(depth + 1);
+  expr.debug(depth + 1);
   body.debug(depth + 1);
 }
 

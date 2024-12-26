@@ -124,7 +124,7 @@ inline void WhileStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Sco
 }
 
 inline void DoStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
-  condition.decorate(scopeStack, scope);
+  expr.decorate(scopeStack, scope);
   body.decorate(scopeStack, scope);
 }
 

@@ -249,7 +249,17 @@ private:
   }
 
   ast::DoStatement parseDoStatement() {
-    TODO("Implement while statement");
+    match(TT_K_DO);
+
+    // TODO: should be statement
+    ast::CodeBlock body = parseCodeBlock();
+
+    match(TT_K_WHILE);
+    match(TT_LPAR);
+    ast::Expression expr = parseExpression(); // Careful, do-while has an expr, not a condition!
+    match(TT_RPAR);
+
+    return ast::DoStatement(std::move(expr), std::move(body));
   }
 
   ast::ForStatement parseForStatement() {

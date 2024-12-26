@@ -439,8 +439,8 @@ public:
   static constexpr const char *node_name = "Node_DoStatement";
 
 public:
-  DoStatement(Expression &&condition, CodeBlock &&body)
-      : condition(std::move(condition)), body(std::move(body)) {}
+  DoStatement(Expression &&expr, CodeBlock &&body)
+      : expr(std::move(expr)), body(std::move(body)) {}
 
   inline void debug(size_t depth) const;
 
@@ -449,7 +449,7 @@ public:
   inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
 
 private:
-  Expression condition;
+  Expression expr;
   CodeBlock body;
 };
 

@@ -10,10 +10,10 @@ extern void printnum(int);
 
 int main() {
     int i = 5;
-    while (i) {
+    do {
         printnum(i);
         i = i - 1;
-    }
+    } while (i);
 
     return 0;
 }
