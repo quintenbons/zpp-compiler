@@ -18,9 +18,11 @@ set(MAIN_PROGRAM_SOURCES
   ${SRC_DIR}/lexing_parsing/lexer.ipp
   ${SRC_DIR}/lexing_parsing/parser.ipp
   ${SRC_DIR}/ast/nodes/nodes.h
+  ${SRC_DIR}/ast/nodes/nodes.ipp
   ${SRC_DIR}/ast/nodes/nodes_debug.ipp
   ${SRC_DIR}/ast/nodes/nodes_decorate.ipp
   ${SRC_DIR}/ast/nodes/nodes_genAsm_x86_64.ipp
+  ${SRC_DIR}/ast/nodes/Assign.ipp
   ${SRC_DIR}/ast/nodes/nodes_loadValueInRegister.ipp
   ${SRC_DIR}/ast/scopes/scopeStack.hpp
   ${SRC_DIR}/ast/scopes/types.hpp

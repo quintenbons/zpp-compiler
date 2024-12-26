@@ -177,7 +177,27 @@ inline void ConditionalStatement::debug(size_t depth) const {
     elseBody->debug(depth + 1);
   }
 }
-  
+
+inline void WhileStatement::debug(size_t depth) const {
+  logNode(depth);
+  condition.debug(depth + 1);
+  body.debug(depth + 1);
+}
+
+inline void DoStatement::debug(size_t depth) const {
+  logNode(depth);
+  expr.debug(depth + 1);
+  body.debug(depth + 1);
+}
+
+inline void ForStatement::debug(size_t depth) const {
+  logNode(depth, "HasCondition:", condition.has_value(), "HasExpression:", expr.has_value());
+  init.debug(depth + 1);
+  if (condition) condition->debug(depth + 1);
+  if (expr) expr->debug(depth + 1);
+  body.debug(depth + 1);
+}
+
 inline void TranslationUnit::debug(size_t depth) const {
   logNode(depth, "Function count: ", functions.size());
   for (const auto &funcNode : functions) {

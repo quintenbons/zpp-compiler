@@ -61,6 +61,62 @@ inline void ConditionalStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &g
   generator.emitLabel(endIfLabel);
 }
 
+inline void WhileStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  auto condLabel = generator.generateUniqueLabel("while");
+  auto endLabel = generator.generateUniqueLabel("while.end");
+
+  generator.emitLabel(condLabel);
+
+  {
+    auto condRegGuard = generator.regSet().acquireGuard();
+    condition.loadValueInRegister(generator, condRegGuard->reg);
+    generator.emitConditionalJump(endLabel, scopes::getProperRegisterFromID64(condRegGuard->reg));
+  }
+
+  body.genAsm_x86_64(generator);
+
+  generator.emitJump(condLabel);
+  generator.emitLabel(endLabel);
+}
+
+inline void DoStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  auto startLabel = generator.generateUniqueLabel("do-while");
+
+  generator.emitLabel(startLabel);
+  body.genAsm_x86_64(generator);
+
+  // no need for cond label
+  {
+    auto condRegGuard = generator.regSet().acquireGuard();
+    expr.loadValueInRegister(generator, condRegGuard->reg);
+    generator.emitConditionalJumpNonZero(startLabel, scopes::getProperRegisterFromID64(condRegGuard->reg));
+  }
+}
+
+inline void ForStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  auto condLabel = generator.generateUniqueLabel("for");
+  auto endLabel = generator.generateUniqueLabel("for.end");
+
+  init.genAsm_x86_64(generator);
+
+  generator.emitLabel(condLabel);
+
+  if (condition) {
+    auto condRegGuard = generator.regSet().acquireGuard();
+    condition->loadValueInRegister(generator, condRegGuard->reg);
+    generator.emitConditionalJump(endLabel, scopes::getProperRegisterFromID64(condRegGuard->reg));
+  }
+
+  body.genAsm_x86_64(generator);
+
+  if (expr) {
+    expr->genAsm_x86_64(generator);
+  }
+
+  generator.emitJump(condLabel);
+  generator.emitLabel(endLabel);
+}
+
 inline void Statement::genAsm_x86_64(
     codegen::NasmGenerator_x86_64 &generator) const {
   std::visit([&generator](const auto &node) { node.genAsm_x86_64(generator); },

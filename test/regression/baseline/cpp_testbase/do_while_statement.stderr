@@ -1,0 +1,4 @@
+./a.asm:25: error: parser: instruction expected
+./a.asm:34: error: parser: instruction expected
+[31m
+[0m

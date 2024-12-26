@@ -20,11 +20,15 @@ namespace ast {
   X(Declaration)                                                               \
   X(FunctionCall)                                                              \
   X(BinaryOperation)                                                           \
+  X(Assign)                                                                    \
   X(NumberLiteral)                                                             \
   X(StringLiteral)                                                             \
   X(ReturnStatement)                                                           \
   X(InlineAsmStatement)                                                        \
   X(ConditionalStatement)                                                      \
+  X(WhileStatement)                                                            \
+  X(DoStatement)                                                               \
+  X(ForStatement)                                                              \
   X(CodeBlock)                                                                 \
   X(FunctionParameter)                                                         \
   X(FunctionParameterList)                                                     \
@@ -217,10 +221,29 @@ private:
   std::unique_ptr<Expression> rhs;
 };
 
+class Assign : public interface::AstNode<Assign> {
+public:
+  static constexpr const char *node_name = "Node_Assign";
+
+public:
+  Assign(const Assign &other);
+  Assign(Variable lhs, Expression rhs);
+
+  inline void debug(size_t depth) const;
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+  inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator,
+                                  scopes::GeneralPurposeRegister targetRegister) const;
+
+private:
+  std::unique_ptr<Variable> lhs;
+  std::unique_ptr<Expression> rhs;
+};
+
 class Expression : public interface::AstNode<Expression> {
 public:
   static constexpr const char *node_name = "Node_Expression";
-  using ExpressionVariant = std::variant<NumberLiteral, Variable, FunctionCall, BinaryOperation>;
+  using ExpressionVariant = std::variant<NumberLiteral, Variable, FunctionCall, BinaryOperation, Assign>;
 
 public:
   Expression(const Expression &other) : expr(other.expr) {}
@@ -229,6 +252,7 @@ public:
   Expression(Variable &&expr) : expr(std::move(expr)) {}
   Expression(FunctionCall &&expr) : expr(std::move(expr)) {}
   Expression(BinaryOperation &&expr) : expr(std::move(expr)) {}
+  Expression(Assign &&expr) : expr(std::move(expr)) {}
 
   inline void debug(size_t depth) const;
 
@@ -342,8 +366,9 @@ public:
   static constexpr const char *node_name = "Node_CodeBlock";
 
 public:
-  CodeBlock(std::vector<Statement> &&statements)
-      : statements(std::move(statements)) {}
+  CodeBlock(std::vector<Statement> &&statements, scopes::Scope *givenScope = nullptr)
+      : statements(std::move(statements))
+      , scope(givenScope) {}
 
   inline void debug(size_t depth) const;
 
@@ -354,7 +379,7 @@ public:
   inline scopes::Scope &getOrCreateScope(scopes::ScopeStack &scopeStack,
                                          scopes::Scope &scope) {
     if (!this->scope) {
-      this->scope = &scopeStack.createChildScope(&scope);
+      this->scope = &scopeStack.createChildScope(scope);
     }
     return *this->scope;
   }
@@ -390,8 +415,67 @@ private:
   std::optional<CodeBlock> elseBody;
 };
 
+class WhileStatement : public interface::AstNode<WhileStatement> {
+public:
+  static constexpr const char *node_name = "Node_WhileStatement";
 
+public:
+  WhileStatement(Expression &&condition, CodeBlock &&body)
+      : condition(std::move(condition)), body(std::move(body)) {}
 
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+private:
+  Expression condition;
+  CodeBlock body;
+};
+
+class DoStatement : public interface::AstNode<DoStatement> {
+public:
+  static constexpr const char *node_name = "Node_DoStatement";
+
+public:
+  DoStatement(Expression &&expr, CodeBlock &&body)
+      : expr(std::move(expr)), body(std::move(body)) {}
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+private:
+  Expression expr;
+  CodeBlock body;
+};
+
+class ForStatement : public interface::AstNode<ForStatement> {
+public:
+  static constexpr const char *node_name = "Node_ForStatement";
+
+public:
+  ForStatement(Declaration &&init, std::optional<Expression> &&condition,
+                std::optional<Expression> &&expr, CodeBlock &&body)
+      : init(init), condition(std::move(condition)), expr(expr), body(std::move(body)) {}
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate (scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+private:
+  Declaration init;
+  std::optional<Expression> condition;
+  std::optional<Expression> expr;
+  CodeBlock body;
+
+  scopes::Scope *loopScope = nullptr;
+};
 
 class FunctionParameter : public interface::AstNode<FunctionParameter> {
 public:
@@ -559,7 +643,14 @@ private:
 class Statement: public interface::AstNode<Statement> {
   public:
     static constexpr const char *node_name = "Node_Statement";
-    using StatementVariant = std::variant<Instruction, ConditionalStatement, CodeBlock /**, LoopStatement */>;
+    using StatementVariant = std::variant<
+      Instruction,
+      ConditionalStatement,
+      CodeBlock,
+      WhileStatement,
+      DoStatement,
+      ForStatement
+    >;
 
   public:
     template <typename T>
