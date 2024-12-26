@@ -61,6 +61,21 @@ inline void ConditionalStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &g
   generator.emitLabel(endIfLabel);
 }
 
+inline void WhileStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  (void) generator;
+  TODO("Implement while statement genasm");
+}
+
+inline void DoStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  (void) generator;
+  TODO("Implement do-while statement genasm");
+}
+
+inline void ForStatement::genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const {
+  (void) generator;
+  TODO("Implement for statement genasm");
+}
+
 inline void Statement::genAsm_x86_64(
     codegen::NasmGenerator_x86_64 &generator) const {
   std::visit([&generator](const auto &node) { node.genAsm_x86_64(generator); },

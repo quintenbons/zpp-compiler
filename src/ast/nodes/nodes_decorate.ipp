@@ -118,6 +118,23 @@ inline void ConditionalStatement::decorate(scopes::ScopeStack &scopeStack, scope
   }
 }
 
+inline void WhileStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  condition.decorate(scopeStack, scope);
+  body.decorate(scopeStack, scope);
+}
+
+inline void DoStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  condition.decorate(scopeStack, scope);
+  body.decorate(scopeStack, scope);
+}
+
+inline void ForStatement::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
+  init.decorate(scopeStack, scope);
+  if (condition) condition->decorate(scopeStack, scope);
+  if (expr) expr->decorate(scopeStack, scope);
+  body.decorate(scopeStack, scope);
+}
+
 inline void FunctionDeclaration::decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope) {
   returnType.decorate(scopeStack, scope);
   params.decorate(scopeStack, scope);

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <functional>
+#include <optional>
 
 #include "ast/scopes/registers.hpp"
 #include "dbg/logger.hpp"
@@ -213,10 +214,15 @@ private:
     return ast::FunctionParameter(std::move(type), ast::Variable(std::move(name)));
   }
 
+  decltype(auto) parseCondition() {
+    // TODO: conditions can also be declarations
+    return parseExpression();
+  }
+
   ast::ConditionalStatement parseConditionalStatement() {
     match(TT_K_IF);
     match(TT_LPAR);
-    auto condition = parseExpression();
+    auto condition = parseCondition();
     match(TT_RPAR);
     auto ifBody = parseCodeBlock();
 
@@ -228,6 +234,37 @@ private:
       return ast::ConditionalStatement(std::move(condition), std::move(ifBody), parseCodeBlock());
     } 
     else return ast::ConditionalStatement(std::move(condition), std::move(ifBody));
+  }
+
+  ast::ConditionalStatement parseWhileStatement() {
+    TODO("Implement while statement");
+  }
+
+  ast::ConditionalStatement parseDoStatement() {
+    TODO("Implement while statement");
+  }
+
+  ast::ForStatement parseForStatement() {
+    // TODO: for (for-range-declaration : expression) statement
+    match(TT_K_FOR);
+    match(TT_LPAR);
+
+    // TODO: initStatement can also be an expression (or empty?)
+    auto initStatement = parseDeclaration();
+    match(TT_SEMI);
+
+    std::optional<ast::Expression> condition = std::nullopt;
+    if (_currentToken.type != TT_SEMI) condition.emplace(parseCondition());
+    match(TT_SEMI);
+
+    std::optional<ast::Expression> expr = std::nullopt;
+    if (_currentToken.type != lexer::TT_RPAR) expr.emplace(parseExpression());
+    match(TT_RPAR);
+
+    // TODO: should be statement
+    auto body = parseCodeBlock();
+
+    return ast::ForStatement(std::move(initStatement), std::move(condition), std::move(expr), std::move(body));
   }
 
   ast::FunctionParameterList parseFunctionParams()
@@ -287,10 +324,13 @@ private:
     if (_currentToken.type == TT_IDENT)
     {
       std::string_view ident = match(TT_IDENT);
-      if (_currentToken.type == TT_LPAR)
-        return ast::Expression(parseFunctionCall(ident));
-      else
-        return ast::Expression(ast::Variable(std::move(ident)));
+      if (_currentToken.type == TT_LPAR) return ast::Expression(parseFunctionCall(ident));
+
+      ast::Variable var = ast::Variable(std::move(ident));
+      if (!maybeMatch(lexer::TT_EQUAL)) return ast::Expression(std::move(var));
+
+      auto expr = parseExpression();
+      return ast::Expression(ast::Assign(std::move(var), std::move(expr)));
     }
 
     auto numberLiteral = parseNumberLiteral();
@@ -412,6 +452,9 @@ private:
   {
     if (_currentToken.type == TT_LCURL) return ast::Statement(parseCodeBlock());
     if (_currentToken.type == TT_K_IF) return ast::Statement(parseConditionalStatement());
+    if (_currentToken.type == TT_K_WHILE) return ast::Statement(parseWhileStatement());
+    if (_currentToken.type == TT_K_DO) return ast::Statement(parseDoStatement());
+    if (_currentToken.type == TT_K_FOR) return ast::Statement(parseForStatement());
     auto statement = ast::Statement(parseSingleInstruction());
     match(lexer::TT_SEMI);
     return statement;
