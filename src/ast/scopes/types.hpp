@@ -25,7 +25,7 @@ enum PrimitiveTypeIndex
 };
 
 const static TypeDescription VOID_TYPE = TypeDescription{ IDX_VOID_TYPE, 0, "void" };
-const static TypeDescription CHAR_TYPE = TypeDescription{ IDX_INT_TYPE, 1, "char" };
+const static TypeDescription CHAR_TYPE = TypeDescription{ IDX_CHAR_TYPE, 1, "char" };
 const static TypeDescription INT_TYPE = TypeDescription{ IDX_INT_TYPE, 4, "int" };
 
 inline std::vector<TypeDescription> generatePrimitiveTypeVector()
