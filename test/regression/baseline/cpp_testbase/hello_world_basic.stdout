@@ -1,5 +1,0 @@
-/home/qbons/zpp-compiler/cpp_testbase/hello_world_basic.cpp
-== Parsing
-[Line: 0, Offset: 8] Build failed: Unexpected token type=[TT_DOUBLE_QUOTE] for value=["] expected=[TT_IDENT]
-extern "C" void write(int, const char*, int);
-       ^
