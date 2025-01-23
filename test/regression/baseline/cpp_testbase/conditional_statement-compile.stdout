@@ -1,0 +1,200 @@
+== Parsing
+
+== Done parsing
+[35m[Node_TranslationUnit] Function count: 1
+[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
+[0m[35m    [Node_Type] int
+[0m[35m    [Node_FunctionParameterList] ParameterCount: 0
+[0m[35m    [Node_CodeBlock] InstructionCount: 6
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 1
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 0
+[0m[35m      [Node_ConditionalStatement] Else
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 1
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 2
+[0m[35m      [Node_ConditionalStatement] Else
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_ConditionalStatement] 
+[0m[35m            [Node_NumberLiteral] 1
+[0m[35m            [Node_CodeBlock] InstructionCount: 1
+[0m[35m              [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m                [Node_NumberLiteral] 3
+[0m[35m          [Node_ConditionalStatement] Else
+[0m[35m            [Node_CodeBlock] InstructionCount: 1
+[0m[35m              [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m                [Node_NumberLiteral] 4
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 1
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 5
+[0m[35m      [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m        [Node_NumberLiteral] 6
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 7
+[0m[35m      [Node_ConditionalStatement] Else
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 8
+[0m[35m      [Node_ReturnStatement] 
+[0m[35m      [Node_NumberLiteral] 0
+[0m[35m[Node_TranslationUnit] Class count: 0
+[0m
+== Decorating
+[35mScopeStack of 11 scopes
+[0m[35m[Scope] id=0 ; parent=0
+  [Type] id=1 ; name=char ; size=1
+  [Type] id=2 ; name=int ; size=4
+  [Type] id=0 ; name=void ; size=0
+  [Function] id=2 name=main ; returnType=int ; parameters=
+  [Function] id=1 name=printnum ; returnType=void ; parameters=int 
+[0m[35m[Scope] id=1 ; parent=0
+[0m[35m[Scope] id=2 ; parent=1
+[0m[35m[Scope] id=3 ; parent=1
+[0m[35m[Scope] id=4 ; parent=1
+[0m[35m[Scope] id=5 ; parent=1
+[0m[35m[Scope] id=6 ; parent=5
+[0m[35m[Scope] id=7 ; parent=5
+[0m[35m[Scope] id=8 ; parent=1
+[0m[35m[Scope] id=9 ; parent=1
+[0m[35m[Scope] id=10 ; parent=1
+[0m
+== Done decorating
+[35m[Node_TranslationUnit] Function count: 1
+[0m[35m  [Node_Function] ReturnType: int ; Name: main ; ParamCount: 0
+[0m[35m    [Node_Type] int
+[0m[34m      [Decoration] TypeDescription: int ; Size: 4 ; Id: 2
+[0m[35m    [Node_FunctionParameterList] ParameterCount: 0
+[0m[35m    [Node_CodeBlock] InstructionCount: 6
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 1
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 0
+[0m[35m      [Node_ConditionalStatement] Else
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 1
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 2
+[0m[35m      [Node_ConditionalStatement] Else
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_ConditionalStatement] 
+[0m[35m            [Node_NumberLiteral] 1
+[0m[35m            [Node_CodeBlock] InstructionCount: 1
+[0m[35m              [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m                [Node_NumberLiteral] 3
+[0m[35m          [Node_ConditionalStatement] Else
+[0m[35m            [Node_CodeBlock] InstructionCount: 1
+[0m[35m              [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m                [Node_NumberLiteral] 4
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 1
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 5
+[0m[35m      [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m        [Node_NumberLiteral] 6
+[0m[35m      [Node_ConditionalStatement] 
+[0m[35m        [Node_NumberLiteral] 0
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 7
+[0m[35m      [Node_ConditionalStatement] Else
+[0m[35m        [Node_CodeBlock] InstructionCount: 1
+[0m[35m          [Node_FunctionCall] printnum ; ArgumentCount: 1
+[0m[35m            [Node_NumberLiteral] 8
+[0m[35m      [Node_ReturnStatement] 
+[0m[35m      [Node_NumberLiteral] 0
+[0m[34m    [Decoration] FunctionDescription: main ; Id: 2
+[0m[35m[Node_TranslationUnit] Class count: 0
+[0m
+== Generating code
+== Generated asm to a.asm:
+section .data
+
+section .rodata
+
+section .bss
+
+section .text
+	extern printnum:function
+
+	global main:function
+	global _start:function
+
+_start:
+	call main
+	mov rdi, rax            ; Exit code (0) expects return of main to be put in rax for now
+	mov rax, 60                  ; Syscall number for exit (60)
+	syscall                      ; Make the syscall
+
+main:
+	push rbp                 ; Save the base pointer
+	mov rbp, rsp              ; Set base pointer to current stack pointer
+	mov rax, 1 ; Loading number literal
+	test rax,rax
+	jz ._U0_else
+	mov rdi, 0 ; Loading number literal
+	call printnum
+	jmp ._U1_end_if
+._U0_else:
+	mov rdi, 1 ; Loading number literal
+	call printnum
+._U1_end_if:
+	mov rax, 0 ; Loading number literal
+	test rax,rax
+	jz ._U2_else
+	mov rdi, 2 ; Loading number literal
+	call printnum
+	jmp ._U3_end_if
+._U2_else:
+	mov rax, 1 ; Loading number literal
+	test rax,rax
+	jz ._U4_else
+	mov rdi, 3 ; Loading number literal
+	call printnum
+	jmp ._U5_end_if
+._U4_else:
+	mov rdi, 4 ; Loading number literal
+	call printnum
+._U5_end_if:
+._U3_end_if:
+	mov rax, 1 ; Loading number literal
+	test rax,rax
+	jz ._U7_end_if
+	mov rdi, 5 ; Loading number literal
+	call printnum
+._U7_end_if:
+	mov rdi, 6 ; Loading number literal
+	call printnum
+	mov rax, 0 ; Loading number literal
+	test rax,rax
+	jz ._U8_else
+	mov rdi, 7 ; Loading number literal
+	call printnum
+	jmp ._U9_end_if
+._U8_else:
+	mov rdi, 8 ; Loading number literal
+	call printnum
+._U9_end_if:
+	mov rax, 0 ; Loading number literal
+	mov rsp, rbp              ; Restoring stack pointer
+	pop rbp                   ; Restore the base pointer
+	ret
+== Generated .o as a.o:
+== Generating exe as a.out:

@@ -1,0 +1,4 @@
+== Parsing
+[Line: 0, Offset: 32] Build failed: Found trailing TT_COMMA in list, expected new element
+int main(int argc, char **argv,)
+                               ^

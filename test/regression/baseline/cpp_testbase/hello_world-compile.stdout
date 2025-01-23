@@ -1,0 +1,4 @@
+== Parsing
+[Line: 0, Offset: 0] Build failed: Lexing failure: unknown character at pos[0]: [#]
+#include <iostream>
+^
