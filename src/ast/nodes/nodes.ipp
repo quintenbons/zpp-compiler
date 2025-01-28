@@ -6,3 +6,4 @@
 #include "nodes_loadValueInRegister.ipp"
 
 #include "Assign.ipp"
+#include "UnaryOperation.ipp"

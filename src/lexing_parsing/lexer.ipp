@@ -81,6 +81,8 @@ namespace keywords
     X(TT_RCURL, "TT_RCURL") \
     X(TT_DOUBLE_QUOTE, "TT_DOUBLE_QUOTE") \
     \
+    X(TT_AMPERSAND, "TT_AMPERSAND") \
+    \
     X(TT_COMMA, "TT_COMMA") \
     X(TT_COLON, "TT_COLON") \
     X(TT_SEMI, "TT_SEMI") \
@@ -192,6 +194,8 @@ public:
       if (current == ',') return createToken(TT_COMMA, std::string_view(_content.data()+_pos++, 1));
       if (current == ':') return createToken(TT_COLON, std::string_view(_content.data()+_pos++, 1));
       if (current == ';') return createToken(TT_SEMI, std::string_view(_content.data()+_pos++, 1));
+
+      if (current == '&') return createToken(TT_AMPERSAND, std::string_view(_content.data()+_pos++, 1));
 
       if (current == '"') return createToken(TT_DOUBLE_QUOTE, std::string_view(_content.data()+_pos++, 1));
 

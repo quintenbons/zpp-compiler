@@ -357,6 +357,11 @@ private:
       auto expr = parseExpression();
       return ast::Expression(ast::Assign(std::move(var), std::move(expr)));
     }
+    else if (maybeMatch(TT_AMPERSAND)) {
+      std::string_view ident = match(TT_IDENT);
+      ast::Variable var = ast::Variable(std::move(ident));
+      return ast::Expression(ast::UnaryOperation(ast::UnaryOperation::Operation::ADDRESS_OF, std::make_unique<ast::Expression>(ast::Expression(std::move(var)))));
+    }
 
     auto numberLiteral = parseNumberLiteral();
     return ast::Expression(std::move(numberLiteral));
