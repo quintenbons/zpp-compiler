@@ -357,7 +357,7 @@ private:
 
       while (_pos < _content.size() - 1 && (peek() != '*' || peek<1>() != '/'))
       {
-        if (_pos == '\n') incrementLineCount();
+        if (peek() == '\n') incrementLineCount();
         ++_pos;
       }
 
