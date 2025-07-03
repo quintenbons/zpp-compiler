@@ -17,16 +17,24 @@ struct TypeDescription
   std::string name;
 };
 
+#define FUNDAMENTAL_TYPE_LIST \
+  X(VOID)                     \
+  X(CHAR)                     \
+  X(INT)                       
+
 enum PrimitiveTypeIndex
 {
-  IDX_VOID_TYPE,
-  IDX_CHAR_TYPE,
-  IDX_INT_TYPE,
+#define X(type) IDX_##type##_TYPE,
+  FUNDAMENTAL_TYPE_LIST  
+#undef X
 };
+
 
 const static TypeDescription VOID_TYPE = TypeDescription{ IDX_VOID_TYPE, 0, "void" };
 const static TypeDescription CHAR_TYPE = TypeDescription{ IDX_CHAR_TYPE, 1, "char" };
 const static TypeDescription INT_TYPE = TypeDescription{ IDX_INT_TYPE, 4, "int" };
+
+const static byteSize_t ADDRESS_SIZE = 8;
 
 inline std::vector<TypeDescription> generatePrimitiveTypeVector()
 {

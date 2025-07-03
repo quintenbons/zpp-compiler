@@ -37,7 +37,6 @@ inline void BinaryOperation::loadValueInRegister(codegen::NasmGenerator_x86_64 &
       break;
     case Operation::CMP_LEQ:
       generator.emitCmp(properTargetReg, properTmpReg);
-      LOG_DEBUG("LEQ is seen here");
       generator.emitSetCC(tgtRegByte, codegen::CMP_OPERATION::LEQ);
       break;
     case Operation::CMP_GEQ:

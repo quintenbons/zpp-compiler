@@ -58,6 +58,9 @@ inline void Declaration::decorate(scopes::ScopeStack &scopeStack,
   scopeStack.addLocalVariable(variable.getName(), type.getTypeDescription(),
                               scope);
   variable.decorate(scopeStack, scope);
+  if (assignment.has_value()) {
+    assignment->decorate(scopeStack, scope);
+  }
 }
 
 inline void ReturnStatement::decorate(scopes::ScopeStack &scopeStack,

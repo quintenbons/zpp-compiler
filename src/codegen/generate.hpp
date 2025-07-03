@@ -201,6 +201,10 @@ public:
     textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", " << value << " ; Loading number literal" << ENDL;
   }
 
+  void emitLoadAddress(const scopes::Register &reg, const scopes::byteSize_t offset) {
+    textSection.body << INDENT << "mov " << scopes::regToStr(reg) << ", " << offset << " ; Load address in register" << ENDL;
+  }
+
   void emitTest(scopes::Register reg1, scopes::Register reg2) {
     textSection.body << INDENT << "test " << reg1 << "," << reg2 << ENDL;
   }

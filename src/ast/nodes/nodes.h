@@ -191,6 +191,32 @@ private:
   std::vector<Expression> arguments;
 };
 
+class UnaryOperation: interface::AstNode<UnaryOperation> {
+public:
+  enum class Operation : char {
+    ADDRESS_OF = '&',
+  };
+  
+  static constexpr const char *node_name = "Node_UnaryOperation";
+
+public:
+  UnaryOperation(Operation op, std::unique_ptr<Expression> &&expr);
+
+  UnaryOperation(const UnaryOperation &other);
+
+  inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+  inline void debug(size_t depth) const;
+
+  inline void decorate(scopes::ScopeStack &scopeStack, scopes::Scope &scope);
+
+  inline void loadValueInRegister(codegen::NasmGenerator_x86_64 &generator, scopes::GeneralPurposeRegister targetRegister) const;
+
+private:
+  Operation op;
+  std::unique_ptr<Expression> expr;
+};
+
 class BinaryOperation: interface::AstNode<BinaryOperation> {
 public:
   enum class Operation : char {
@@ -255,7 +281,7 @@ private:
 class Expression : public interface::AstNode<Expression> {
 public:
   static constexpr const char *node_name = "Node_Expression";
-  using ExpressionVariant = std::variant<NumberLiteral, Variable, FunctionCall, BinaryOperation, Assign>;
+  using ExpressionVariant = std::variant<NumberLiteral, Variable, FunctionCall, UnaryOperation, BinaryOperation, Assign>;
 
 public:
   Expression(const Expression &other) : expr(other.expr) {}
@@ -263,6 +289,7 @@ public:
   Expression(NumberLiteral &&expr) : expr(std::move(expr)) {}
   Expression(Variable &&expr) : expr(std::move(expr)) {}
   Expression(FunctionCall &&expr) : expr(std::move(expr)) {}
+  Expression(UnaryOperation &&expr) : expr(std::move(expr)) {}
   Expression(BinaryOperation &&expr) : expr(std::move(expr)) {}
   Expression(Assign &&expr) : expr(std::move(expr)) {}
 
@@ -280,6 +307,19 @@ public:
   }
 
   inline void genAsm_x86_64(codegen::NasmGenerator_x86_64 &generator) const;
+
+  inline scopes::byteSize_t getMemoryOffset() const {
+    if (std::holds_alternative<Variable>(expr)) {
+      auto location = std::get<Variable>(expr).getVariableDescription()->location;
+      if (std::holds_alternative<scopes::LocalStackOffset>(location)) {
+        return std::get<scopes::LocalStackOffset>(location)._byteOffset;
+      } 
+      if (std::holds_alternative<scopes::GlobalStackOffset>(location)) {
+        return std::get<scopes::GlobalStackOffset>(location)._byteOffset;
+      }
+    }
+    THROW("Expression is not a left value");
+  }
 
 private:
   ExpressionVariant expr;
